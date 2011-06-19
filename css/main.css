@@ -1,0 +1,65 @@
+/* CSS Document */
+
+#header {
+	height: 75px;	
+}
+
+#header_img {
+	margin-left: 15px;	
+}
+
+.menu {
+	border: 1px solid black;	
+	text-align: center;
+	text-decoration: none;
+	color: #000;
+}
+
+.menu a {
+	color: #000000;
+	text-decoration: none;	
+}
+
+.menu:hover {
+	background-color: #EAEAEA;
+	color: #000;	
+}
+
+.content {
+	margin-top: 15px;	
+}
+
+.table {
+	
+}
+
+.odd {
+	background-color:#EAEAEA;
+	color: #000000;	
+}
+
+tr, td {
+	padding: 3px;	
+	text-align: center;
+	margin-left: 5px;
+	margin-right: 5px;
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+}
+
+thead td {
+	border: 1px solid black;	
+}
+
+table {
+ border:0;
+}
+
+table td, table th {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.NewApp {
+	display: none;	
+}
