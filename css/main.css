@@ -1,0 +1,86 @@
+/* CSS Document */
+
+#header {
+	height: 75px;	
+}
+
+#header_img {
+	margin-left: 15px;	
+}
+
+.button {
+	font-size: 7px;	
+}
+
+#ui-datepicker-div { font-size: 12px; }
+
+.shadow {
+	-moz-box-shadow: 3px 3px 4px #000;
+	-webkit-box-shadow: 3px 3px 4px #000;
+	box-shadow: 3px 3px 4px #000;
+	/* For IE 8 */
+	-ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000')";
+	/* For IE 5.5 - 7 */
+	filter: progid:DXImageTransform.Microsoft.Shadow(Strength=4, Direction=135, Color='#000000');
+}
+
+.menu {
+	border: 1px solid black;	
+	text-align: center;
+	text-decoration: none;
+	color: #000;
+}
+
+.menu a {
+	color: #000000;
+	text-decoration: none;	
+}
+
+.menu:hover {
+	background-color: #EAEAEA;
+	color: #000;	
+}
+
+.content {
+	margin-top: 15px;	
+}
+
+.table {
+	
+}
+
+.odd {
+	background-color:#EAEAEA;
+	color: #000000;	
+}
+
+tr, td {
+	padding: 3px;	
+	text-align: center;
+	margin-left: 5px;
+	margin-right: 5px;
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+}
+
+thead td {
+	border: 1px solid black;	
+}
+
+table {
+ border:0;
+}
+
+table td, table th {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.NewApp {
+	display: none;	
+}
+
+#pagination a {
+	color: #6C6C6C;
+	text-decoration: none;	
+}
