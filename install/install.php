@@ -1,7 +1,11 @@
 <?php
 
 if (file_exists("../includes/config.php") == true){
-	die("We are already installed. Please log in <a href=\"index.php\">here</a>.");	
+	if (file_exists("LOCK") == false){
+		$file = fopen("LOCK", "w");
+		fclose($file);	
+	}
+	die("We are already installed. Please log in <a href=\"../index.php\">here</a>.");	
 }else{
 	if (file_exists("LOCK")){
 		die("Please delete the \"LOCK\" file from the install directory.");	
@@ -14,8 +18,8 @@ if (file_exists("../includes/config.php") == true){
 		echo "To install we need your database information. Please fill in the required fields bellow.<br /><br />\n";
 		?>
 <form action="install.php?step=3" method="POST">
-MySQL Database: <input type="text" name="db_name" /><br />
 MySQL Host: <input type="text" name="db_host"/><br />
+MySQL Database: <input type="text" name="db_name" /><br />
 MySQL Username: <input type="text" name="db_user" /><br />
 MySQL Password: <input type="password" name="db_pass"/><br />
 <input type="submit" name="sub" value="Next Step" />
@@ -61,14 +65,7 @@ Admin Password: <input type="password" name="pass" /><br />
 		
 		fwrite($con_file, $file_str);
 		fclose($con_file);
-		
-		
-		/*
-		$sql = fopen("sql", "r");
-		$query = fread($sql, filesize("sql"));
-		fclose($sql);
-		//mysql_query("CREATE TABLE access_log (  id int(30) NOT NULL auto_increment, `time` int(30) NOT NULL, aid int(30) NOT NULL, ip varchar(50) character set utf8 NOT NULL, lid int(30) NOT NULL, KEY id (id)) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;") or die(mysql_error());*/
-		
+				
 		mysql_connect($_POST['db_host'], $_POST['db_user'], $_POST['db_pass']);
 		mysql_select_db($_POST['db_name']);
 		
