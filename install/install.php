@@ -16,7 +16,7 @@
 					<div class="wContent" style="padding: 10px;">
 <?php
 
-if (file_exists("../includes/config.php") == false){
+if (file_exists("../includes/config.php") == true){
 	if (file_exists("LOCK") == false){
 		$file = fopen("LOCK", "w");
 		fclose($file);	
