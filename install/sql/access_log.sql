@@ -1,1 +1,0 @@
-CREATE TABLE access_log (  id int(30) NOT NULL auto_increment, `time` int(30) NOT NULL, aid int(30) NOT NULL, ip varchar(50) character set utf8 NOT NULL, lid int(30) NOT NULL, KEY id (id)) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;

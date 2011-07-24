@@ -1,1 +1,0 @@
-CREATE TABLE fail_log (id int(30) NOT NULL auto_increment,`type` varchar(30) collate latin1_general_ci NOT NULL,`time` int(30) NOT NULL,ip varchar(255) collate latin1_general_ci NOT NULL,counted int(1) NOT NULL,PRIMARY KEY  (id)) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
