@@ -1,0 +1,32 @@
+/* CSS Document */
+.widget {
+	margin-right: 10px;
+	margin-left: 10px;
+	border: 1px solid black;
+	background-color: #FFF;
+}
+.wTitle {
+	background-color: #53A9FF;
+	text-align: center;
+	margin: 0xp;
+	margin-bottom: 0px;		
+	padding: 3px;
+	/*border-bottom: 1px solid black;*/
+	color: #000000;
+	font-family: Arial;
+	font-weight: bold;
+}
+.wTitle tab{
+	background-color: #53A9FF;
+	text-align: center;
+	margin: 0xp;
+	margin-bottom: 0px;		
+	border-bottom: 1px solid black;
+	color: #000000;
+	font-family: Arial;
+	font-weight: bold;
+}
+.wContent {
+	margin: 5px;	
+	margin-top: 2px;
+}
