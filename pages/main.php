@@ -14,7 +14,7 @@ if ($_GET['a'] == "logout"){
 	unset($_SESSION['lasthost']);
 	?>
     <script type="text/javascript">
-		window.location = "<?php echo baseurl."index.php" ?>";
+		window.location = "<?php echo "index.php" ?>";
 	</script>
     <?php
 	die();
@@ -464,11 +464,36 @@ echo $output;
 					echo "Updated.";
 				}
 			}
+			
+			if (isset($_GET['method']) == true && $_GET['method'] == "editNews"){
+				$id = $_GET['id'];
+				
+				if (is_numeric($id) == false){
+					echo "ID is invalid.";
+				}else{
+				?>
+				<div class="widget">
+					<div class="wTitle">Manage News</div>
+					<div class="wContent">
+						<?php
+							$query = mysql_query("SELECT * FROM news WHERE aid = '".mysql_real_escape_string($id)."'");
+							if (mysql_num_rows($query) == 0){
+								echo "<p>No Application News Found. Make Some.</p>";
+							}else{
+								
+							}
+						?>
+					</div>
+				</div><br />
+				<?php
+					
+				}
+			}
 		
 			?>
             <form action="index.php?a=applications" method="post">
             	<table style="width: 100%;" id="table">
-                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td></tr></thead>
+                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td><td>News</td></tr></thead>
              <?php
 			 $get_apps = mysql_query("SELECT * FROM applications");
 			 
@@ -481,7 +506,7 @@ echo $output;
 					$default = "No";
 					if ($row['defaults'] == "1"){ $default = "Yes"; }
 					$id = $row['id'];
-					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid=".$row['id']."\">".$users."</a></td><td>{$status}</td><td>{$default} - <a href=\"index.php?a=applications&method=makeDefault&id={$id}\">Make Default</a></td><td>".$row['version']."</td></tr>";
+					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid=".$row['id']."\">".$users."</a></td><td>{$status}</td><td>{$default} - <a href=\"index.php?a=applications&method=makeDefault&id={$id}\">Make Default</a></td><td>".$row['version']."</td><td><a href=\"index.php?a=applications&method=editNews&id={$id}\">Edit News</a></td></tr>";
 				}
 			 }
 			 
@@ -538,6 +563,22 @@ echo $output;
 				if ($_GET['action'] == "flush_inactive_bans"){
 					mysql_query("DELETE FROM bans WHERE expires <= '".time()."' OR  exception = '1'");	
 				}
+				if (isset($_POST['newPass'])) {
+					if ($_POST['cpass'] == "" || $_POST['npass'] == "" || $_POST['npass1'] == ""){
+						$passChangeContent = "Missing information.";
+					}else{
+						$userInfo = mysql_query("SELECT * FROM users WHERE pass = '".md5($_POST['cpass'])."'");
+						if (mysql_num_rows($userInfo) == 0){
+							$passChangeContent = "Password incorrect.";
+						}else{
+							if ($_POST['npass'] != $_POST['npass1']){
+								$passChangeContent = "Passwords are not the same.";
+							}
+							mysql_query("UPDATE users SET pass = '".md5($_POST['npass'])."' WHERE id = '".mysql_real_escape_string($_SESSION['id'])."'");
+							$passChangeContent = "Password Updated.";
+						}
+					}
+				}
 			?>
 
         <div class="widget">
@@ -547,7 +588,19 @@ echo $output;
         <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans")); ?>)</b><br />
         <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
         <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM access_log")); ?>)</b></div>
-</div>
+</div><br />
+		<div class="widget">
+			<div class="wTitle">Change Password</div>
+			<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
+				<form action="index.php?a=admin" method="POST">
+					<?php echo "<b>".$passChangeContent."</b>"; ?>
+					<label>Current Password</label><input type="password" name="cpass" />
+					<label>New Password</label><input type="password" name="npass" />
+					<label>Comfirm Password</label><input type="password" name="npass1" />
+					<input type="submit" name="newPass" value="Change Password" />
+				</form>
+			</div>
+		</div>
         </div>
         <div class="grid_8">
         	<span id="header"><h3>Ban List</h3></span>

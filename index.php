@@ -1,8 +1,7 @@
 <?php
 session_start();
 define("IN_SCRIPT", 1);
-define("VERSION", "1.00");
-define("baseurl", "http://localhost/hwid/", false); // Yet to be implemented.
+define("VERSION", "1.01");
 
 // Keeps the user from screwing up.
 if (file_exists("install/LOCK") == false){
