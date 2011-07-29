@@ -1,4 +1,4 @@
 CHANGE LOG
 ---------
-V1.01 - 29/7/2011 - Updated several small bugs.
+V1.01 - 29/7/2011 - Updated several small bugs and added admin change password.
 V1.00 - 25/7/2011 - First Release. 
