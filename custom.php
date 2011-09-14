@@ -2,20 +2,31 @@
 session_start();
 // For custom requests that require only
 // output being the information. ie. Ajax requests.
+
+/**
+ * Connect to MySQL database.
+ */
 include("includes/mysql_connect.php");
 
-if (isset($_SESSION['user'])==false){
-	die();	
-}
+/**
+ * Check only admins can access this area.
+ */
+if (isset($_SESSION['user'])==false)
+	die();
 
+/**
+ * Generate a licence serial and return it.
+ */ 
 if ($_GET['a'] == "genSerial"){
 	$salt = "jk28sk";
 	$rand_str = rand(0,10000001228);
 	echo md5($salt.$rand_str);
 }
 
+/**
+ * Convert the date to a UNIX time stamp.
+ */
 if ($_GET['a'] == "genTime"){
-	//echo $_POST['date']."1";
 	print_r(strtotime($_POST['date']));
 }
 

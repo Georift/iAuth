@@ -98,3 +98,16 @@ label {
 float : left;
 width : 150px;
 }
+
+.tableNone table, tr, td{
+	border: none;
+}
+
+#textHold {
+	width: 100%;
+	margin:5px 0;
+}
+
+textarea {
+    width:98%;
+}

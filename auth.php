@@ -1,22 +1,24 @@
 <?php
+define("IN_SCRIPT", 1);
 // Validate if the user is real and if not ban their IP
-include("includes/mysql_connect.php");
-include("includes/auth.php");
-include("includes/bans.php");
-
+require_once("includes/init.php");
+/*
 $user = mysql_real_escape_string($_GET['user']);
 $pass = md5($_GET['pass']);
 $hwid = md5($_GET['hwid']);
 $lid = $_GET['aid'];
+*/
 
-$bans = new Bans();
-$auth = new auth();
+$user = $_GET['user'];
+$pass = md5($_GET['pass']);
+$hwid = md5($_GET['hwid']);
+$lid = $_GET['aid'];
 
 // Ban checking
 // Check make sure the user has no previous bans.
 // If they do alert them of it.
 if ($bans->isBanned($_SERVER['REMOTE_ADDR'])){
-	die("Your access has been restricted. This ban only lasts <b>60</b> minutes.");	
+	die("Your access has been restricted. This ban only lasts <b>".$settings->loadValue("BANTIME")."</b> minutes.");	
 }
 
 switch($_GET['a']){
@@ -32,22 +34,27 @@ switch($_GET['a']){
 			}else{
 				$userData = $auth->validLogin($user, $pass, $hwid);
 				if (is_array($userData) == false){
+					print_r($userData);
 					echo "FAILED";
 					$bans->addStrike($_SERVER['REMOTE_ADDR']);	
 				}else{
-					if ($userData['hwid'] == $hwid){
-						if ($userData['expires'] <= time()){
-							echo "ERROR: Your account has expired.";
-							$bans->addStrike($_SERVER['REMOTE_ADDR']);
+					if ($userData['active'] == "1"){
+						if ($userData['hwid'] == $hwid){
+							if ($userData['expires'] <= time()){
+								echo "ERROR: Your account has expired.";
+								$bans->addStrike($_SERVER['REMOTE_ADDR']);
+							}else{
+								$auth->logAccess($userData['id']);
+								$key = $auth->generateHash();
+								$auth->createSession($key, $userData['id']);
+								echo $key;
+							}
 						}else{
-							$auth->logAccess($userData['id']);
-							$key = $auth->generateHash();
-							$auth->createSession($key, $userData['id']);
-							echo $key;
+							echo "ERROR: HWID Invalid. Only try logging in on the computer you activated the serial.";
+							$bans->addStrike($_SERVER['REMOTE_ADDR']);
 						}
 					}else{
-						echo "ERROR: HWID Invalid. Only try logging in on the computer you activated the serial.";
-						$bans->addStrike($_SERVER['REMOTE_ADDR']);
+						echo "ERROR: Your account is suspended.";
 					}
 				}
 			}
@@ -102,6 +109,20 @@ switch($_GET['a']){
 			}
 		}
 		
+		break;
+		case "loadUserData":
+			$hash = $_GET['hash'];
+			// find the lid
+			$run = $db->select("app_sessions", "lid", array("hash" => $hash));
+			
+			if ($db->numRows($run) == 0){
+				echo "Failed.";
+			}else{
+				$array = $db->fetchRow($run);
+				$run = $db->select("licences", "*", array("id" => $array[0]));
+				
+				print_r($db->fetchAssoc($run));
+			}
 		break;
 }
 ?>

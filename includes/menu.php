@@ -17,7 +17,7 @@ if (isset($_SESSION['user']) == true){
 <a href="index.php?a=licences" style="text-decoration: none;"><button id="button" class="grid_2 button">Licences</button></a>
 <a href="index.php?a=applications" style="text-decoration: none;"><button id="button" class="grid_2 button">Applications</button></a>
 <a href="index.php?a=admin" style="text-decoration: none;"><button id="button" class="grid_2 button">Admin</button></a>
-<!--<div class="grid_2 menu"><a href="#">Admins</a></div>-->
+<a href="index.php?a=support" style="text-decoration: none;"><button id="button" class="grid_2 button">Support</button></a>
 <a href="index.php?a=logout" style="text-decoration: none;"><button id="button" class="grid_2 button">Logout</button></a>
 <div class="clear"></div>
 

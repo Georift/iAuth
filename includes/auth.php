@@ -7,8 +7,10 @@ class auth {
 	
 	// Will return true if the hash is valid.
 	function checkHash($hash){
-		$getHash = mysql_query("SELECT * FROM app_sessions WHERE hash = '".mysql_real_escape_string($hash)."'");
-		if (mysql_num_rows($getHash) >= 1){
+		global $db;
+		//$getHash = mysql_query("SELECT * FROM app_sessions WHERE hash = '".mysql_real_escape_string($hash)."'");
+		$getHash = $db->select("app_sessions", "*", array("hash" => $hash));
+		if ($db->numRows($getHash) >= 1){
 			return true;	
 		}
 		return false;
@@ -43,10 +45,12 @@ class auth {
 	}
 	
 	function validLogin($user, $pass, $hwid){
+		global $db;
 		if ($user == "" || $pass == "" || $hwid == ""){ return false; }
 		
 		$query = "SELECT * FROM licences WHERE user = '".$user."' AND pass = '".$pass."' AND hwid = '".$hwid."'";
-		$getData = mysql_query($query);
+		//$getData = mysql_query($query);
+		$getData = $db->select("licences", "*", array("user" => $user, "pass" => $pass, "hwid" => $hwid));
 		
 		if (mysql_num_rows($getData) >= 1){
 			$userData = mysql_fetch_assoc($getData);
@@ -100,7 +104,7 @@ class auth {
 	// Add the new session to the database.
 	function createSession($hash, $lid){
 		// Give the account one hour before it auto logs out.
-		$expires_time = time() + 3600;
+		$expires_time = time() + (LOGTIME * 60);
 		// Check if the user has a previous session running on their licence.
 		$get_active = mysql_query("SELECT * FROM app_sessions WHERE lid = '".mysql_real_escape_string($lid)."'");
 		if (mysql_num_rows($get_active) >= 1){
@@ -124,7 +128,7 @@ class auth {
 		$get_aid = mysql_query("SELECT aid FROM licences WHERE id = '".$lid."'") or die(mysql_error());
 		list($aid) = mysql_fetch_row($get_aid);
 
-		$get_last = mysql_query("SELECT * FROM access_log WHERE lid = '".$lid."' AND time >= '".(time() - 3600)."'");
+		$get_last = mysql_query("SELECT * FROM access_log WHERE lid = '".$lid."' AND time >= '".(time() - (LOGTIME * 60))."'");
 		if (mysql_num_rows($get_last) == 0){
 			mysql_query("INSERT INTO access_log(ip, time, aid, lid) VALUES('".$_SERVER['REMOTE_ADDR']."', '".time()."', '".$aid."', '".$lid."')");
 			return true;

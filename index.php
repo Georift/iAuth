@@ -1,35 +1,33 @@
 <?php
 session_start();
+
+/**
+ * Defines for all scripts that we are executing from within iAuth
+ */
 define("IN_SCRIPT", 1);
-define("VERSION", "1.01");
 
-// Keeps the user from screwing up.
-if (file_exists("install/LOCK") == false){
-	die("Please create a LOCK file in the install folder.");	
-}
-if (file_exists("includes/config.php") == false){
-	die("Please run the install script.");	
-}
+/**
+ * Defines the current version of iAuth
+ */
+define("VERSION", "1.02");
 
-// Init the Plugin class.
-require_once("includes/plugins.php");
+/**
+ *	Load includes/init.php to inilize all the main classes.
+ */
+require_once("includes/init.php"); 
 
-//$plugin->loadPlugins();
-// Loop through the plugin directory and load all binds.
-$f = glob("plugins/*.php");
-foreach($f as $a){
-	require_once($a);
-}
-
-// Connect to mysql database and template files.
-include("includes/mysql_connect.php");
+// Connect to mysql database and template files
 include("includes/header.php");
 include("includes/menu.php");
-//$plugin->addHook("underMenu", "BasicPlugin");
 
+/**
+ * Run the underMenu test hook.
+ */
 $plugin->runHook("underMenu", "");
 
-// Check make sure the last activity was less than an hour ago.
+/**
+ * If the users hasen't done anything for an hour log them out.
+ */
 if (isset($_SESSION['lastActive'])==true && isset($_SESSION['user']) == true){
 	if ((time() + 3600) <= $_SESSION['lastActive']){
 		unset($_SESSION['user']);
@@ -39,12 +37,18 @@ if (isset($_SESSION['lastActive'])==true && isset($_SESSION['user']) == true){
 	}
 }
 
+/**
+ * Decide what page to load depending if they are logged in.
+ */
 if (isset($_SESSION['user'])==false ){
 	include("pages/login.php");
 }else{
 	include("pages/main.php");
 }
 
+/**
+ * Include the footer template.
+ */
 include("includes/footer.php");
 
 ?>

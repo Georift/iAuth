@@ -4,9 +4,6 @@ if (IN_SCRIPT != 1){
 	die("This script must not be accessed directly.");
 }
 
-require_once("includes/auth.php");
-$auth = new auth;
-
 if ($_GET['a'] == "logout"){
 	unset($_SESSION['user']);
 	unset($_SESSION['lastActive']);
@@ -24,25 +21,32 @@ if ($_GET['a'] == ""){
 
 // find the default application.
 function findDefault(){
-	if (mysql_num_rows(mysql_query("SELECT * FROM applications")) >= 1){
-		$get_rows = mysql_query("SELECT * FROM applications WHERE defaults = '1'") or die(mysql_error());
-		if (mysql_num_rows($get_rows) == 0){
-			mysql_query("UPDATE applications SET defaults = '1' LIMIT 1") or die(mysql_error());
+	global $db;
+	
+	$run = $db->select("applications", "*");
+	$rows = $db->numRows($run);
+	if ($rows >= 1){
+		$get_rows = $db->select("applications", "*", array("defaults" => "1"));
+		if ($db->numRows($get_rows) == 0){
+			$db->update("applications", array("defaults" => "1"), "", "LIMIT 1");
 			findDefault();
 		}else{
-			$rows_info = mysql_fetch_assoc($get_rows);
+			$rows_info = $db->fetchAssoc($get_rows);
 			return $rows_info['id'];
-
 		}
 	}
 }
 
 
 $aid = findDefault();	
-$get_active = mysql_num_rows(mysql_query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '1'"));
-$get_inactive = mysql_num_rows(mysql_query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '0'"));
+//$get_active = $db->numRows($db->query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '1'"));
+$get_active = $db->numRows($db->select("licences", "*", array("aid" => $aid, "active" => "1")));
 
-$get_today = mysql_query("SELECT * FROM access_log WHERE aid = '{$aid}'") or die(mysql_error());
+//$get_inactive = $db->numRows($db->query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '0'"));
+$get_inactive = $db->numRows($db->select("licences", "*", array("aid" => $aid, "active" => "0")));
+
+//$get_today = $db->query("SELECT * FROM access_log WHERE aid = '{$aid}'") or die(mysql_error());
+$get_today = $db->select("access_log", "*", array("aid" => $aid)) or die(mysql_error());
 $day_today = date("d", time());
 $set_month = date("m", time());
 
@@ -51,8 +55,8 @@ $yesterday = 0;
 $twob4 = 0;
 $threeb4 = 0;
 
-if (mysql_num_rows($get_today)!=0){
-	while($row = mysql_fetch_assoc($get_today)){
+if ($db->numRows($get_today) != 0){
+	while($row = $db->fetchAssoc($get_today)){
 		$log_day = date("d", $row['time']);
 		if ($set_month == date("m", $row['time'])){
 			if ($log_day == $day_today){
@@ -155,22 +159,23 @@ echo $output;
 			<div class="wTitle">Application Statistics</div>
 			<div class="wContent">
 			<?php
-				$get_apps = mysql_query("SELECT * FROM applications");
-				$get_licences = mysql_query("SELECT * FROM licences");
-				if (mysql_num_rows($get_apps) == 0){
+				$get_apps = $db->select("applications", "*");
+				$get_licences = $db->select("licences", "*");
+				if ($db->numRows($get_apps) == 0){
 					echo "<center>No applications found. Please <a href=\"index.php?a=applications\">create</a> one.</center>";
 				}else{
-					if (mysql_num_rows($get_licences) == 0){
+					if ($db->numRows($get_licences) == 0){
 						echo "<center>No licences found. Please <a href=\"index.php?a=licences\">create</a> one.</center>";
 					}else{
-
+/**
 					if($get_active != "" && $get_inactive != ""){
 						echo "<div id=\"active_div\"></div>";
 					}else{
-						echo "<center>No licences found. Please <a href=\"index.php?a=licences\">create</a> one</center>";
-					}
+						echo "<div id=\"active_div\"></div>";
+						//echo "<center>No licences found. Please <a href=\"index.php?a=licences\">create</a> one</center>";
+					} */
 				?>
-				<div id="chart_div"></div>
+				<div id="active_div"></div><div id="chart_div"></div>
 			<?php 
 					}
 				} 
@@ -197,11 +202,11 @@ echo $output;
 					 // We have a list of all check checkboxes now.
 					 // Only have to run the sql
 					 if ($_POST['mass_action'] == "delete"){
-						mysql_query("DELETE FROM licences WHERE id = '".(int)$id."'"); 
+						$db->delete("licences", array("id" => $id));
 					 }elseif($_POST['mass_action'] == "suspend"){
-						 mysql_query("UPDATE licences SET active = '0' WHERE id = '".(int)$id."'");
+						$db->update("licences", array("active" => "0"), array("id" => $id));
 					 }elseif($_POST['mass_action'] == "unsuspend"){
-						 mysql_query("UPDATE licences SET active = '1' WHERE id = '".(int)$id."'");
+						$db->update("licences", array("active" => "1"), array("id" => $id));
 					 }
 				 }
 			}
@@ -210,27 +215,31 @@ echo $output;
 				// Check if the form has been submitted
 				if (isset($_POST['updateLicence'])){
 					// The form has been submitted
-					$user = mysql_real_escape_string($_POST['user']);
+					$runArray = array();
+					
+					$runArray['user'] = $_POST['user'];
 					$pass = md5($_POST['pass']);
-					$hwid = mysql_real_escape_string($_POST['hwid']);
+					$runArray['hwid'] = md5($_POST['HWID']);
 					if ($_POST['expires'] != ""){
-						$expires = strtotime(str_replace("/", "-", $_POST['expires']));
+						$runArray['expires'] = strtotime(str_replace("/", "-", $_POST['expires']));
 						echo "Updated Licence Info";
 					}
 					if ($_POST['active'] == "on"){
-						$active = 1;
+						$runArray['active'] = 1;
 					}else{
-						$active = 0;
+						$runArray['active'] = 0;
 					}
-					$application = mysql_real_escape_string($_POST['app']);
+					$runArray['aid'] = $_POST['app'];
 					$passQuery = "";
 					if ($_POST['pass'] != "Password Hidden"){
-						$passQuery = " pass = '".$pass."',";
+						$runArray['pass'] = md5($pass);
 					}
 					if($_POST['pass'] == ""){
-						$passQuery = " pass = '',";
+						$runArray['pass'] = "";
 					}
-					mysql_query("UPDATE licences SET user = '".$user."',".$passQuery." hwid = '".$hwid."', expires = '".$expires."', aid = '".$application."', active = '".$active."' WHERE id = '".mysql_real_escape_string($_GET['id'])."'") or die(mysql_error());
+					$runArray['serial'] = $_POST['serial'];
+
+					$db->update("licences", $runArray, array("id" => $_GET['id']));
 				}
 				$id = $_GET['id'];
 				if ($id == "" AND is_int($id) == false){
@@ -242,7 +251,7 @@ echo $output;
 						echo "ID not found.";
 					}else{
 						//print_r($userData);
-						$appName = mysql_fetch_row(mysql_query("SELECT name FROM applications WHERE id = '".$userData['aid']."'"));
+						$appName = $db->fetchRow($db->select("applications", "name", array("id" => $userData['aid'])));
 						
 						?>
 							<script>
@@ -256,12 +265,12 @@ echo $output;
 									<form action="index.php?a=licences&method=edit&id=<?php echo $userData['id']; ?>" method="POST">
 										<label>Application:</label><select name="app"><option value="<?php echo $userData['aid']; ?>"><?php echo $appName[0]; ?></option>
 											<?php
-												/* Generate a list of all applications.
-												$get_app = mysql_query("SELECT * FROM applications WHERE active = '1'");
-												if (mysql_num_rows($get_app) == 0){
+												/** Generate a list of all applications.
+												$get_app = $db->query("SELECT * FROM applications WHERE active = '1'");
+												if ($db->numRows($get_app) == 0){
 													echo "Failed";	
 												}else{
-													while($row = mysql_fetch_assoc($get_app)){
+													while($row = $db->fetchAssoc($get_app)){
 														if($userData['aid'] != $row['id']){
 															echo "<option value=\"".$row['id']."\">".$row['name']."</option>";
 														}
@@ -269,7 +278,7 @@ echo $output;
 												}*/
 											?>
 										</select>
-										<label>HWID:</label><input type="text" name="HWID" size="35" value="<?php echo $userData['HWID']; ?>" />
+										<label>HWID:</label><input type="text" name="HWID" size="35" value="<?php echo $userData['hwid']; ?>" />
 										<label>Expires:</label><input type="text" id="datepicker" name="expires" value="<?php If($userData['expires'] != ""){ echo date("d/m/Y", $userData['expires']); } ?>" />
 										<label>Serial:</label><input type="text" size="35" name="serial" width="50px" value="<?php echo $userData['serial']; ?>" />
 										<label>Username:</label><input type="text" name="user" value="<?php echo $userData['user']; ?>" />
@@ -284,23 +293,25 @@ echo $output;
 				}
 			}else{
 				// Load all licences here
-				$query = "SELECT * FROM licences";
+				$queryArray = array();
 				if (isset($_GET['aid']) == true){
-					$query = $query . " WHERE aid = '".mysql_real_escape_string($_GET['aid'])."' AND active = '1'";	
-					$applet_name = mysql_fetch_row(mysql_query("SELECT name FROM applications WHERE id = '".mysql_real_escape_string($_GET['aid'])."'"));
+					$queryArray['aid'] = $_GET['aid'];
+					$queryArray['active'] = "1";
+					$applet_name = $db->fetchRow($db->select("applications", "name", array("id" => $_GET['aid'])));
 					$alert = "Only showing active licences from <a href=\"index.php?a=applications\">".$applet_name[0]."</a>\n";
 					echo $alert;
 				}
 				
 				echo "<form action=\"index.php?a=licences\" method=\"POST\"><table style=\"width: 100%;\" class=\"table\" id=\"table\"><thead><tr><td></td><td>ID</td><td>Application</td><td>Serial</td><td>Expires</td><td>Suspended</td><td>Username</td><td></td></tr></thead>\n";
 				
-				$get_licences = mysql_query($query) or die(mysql_error());
-				if (mysql_num_rows($get_licences)==0){
+				//$get_licences = $db->query($query) or die(mysql_error());
+				$get_licences = $db->select("licences", "*", $queryArray) or die(mysql_error());
+				if ($db->numRows($get_licences) == 0){
 					echo "<tr class=\"none_tr\"><td colspan=\"50\"><center><b>No Licences Running.</b></center></td></tr>";	
 				}else{
 					
-					while($row = mysql_fetch_assoc($get_licences)){
-						$application_name = mysql_fetch_row(mysql_query("SELECT name FROM applications WHERE id = '".$row['aid']."'"));
+					while($row = $db->fetchAssoc($get_licences)){
+						$application_name = $db->fetchRow($db->select("applications", "name", array("id" => $row['aid'])));
 						if ($row['expires'] == 0){ 
 							$expires = "Never";
 						}else{ 
@@ -393,7 +404,7 @@ echo $output;
 						<div class="wTitle">Create New Licence</div>
 						<div class="wContent hiddenInfo">
 						<?php
-							if (mysql_num_rows(mysql_query("SELECT * FROM applications")) == 0){
+							if ($db->numRows($db->select("applications")) == 0){
 								echo "<p>Please create an application first.</p>";
 							}else{
 						?>
@@ -401,11 +412,11 @@ echo $output;
 								<label>Application:</label><select name="app">
 									<?php
 										// Generate a list of all applications.
-										$get_app = mysql_query("SELECT * FROM applications WHERE active = '1'");
-										if (mysql_num_rows($get_app) == 0){
+										$get_app = $db->select("applications", "*", array("active" => "1"));
+										if ($db->numRows($get_app) == 0){
 											echo "Failed";	
 										}else{
-											while($row = mysql_fetch_assoc($get_app)){
+											while($row = $db->fetchAssoc($get_app)){
 												echo "<option value=\"".$row['id']."\">".$row['name']."</option>";
 											}
 										}
@@ -440,13 +451,15 @@ echo $output;
 					 // We have a list of all check checkboxes now.
 					 // Only have to run the sql
 					 if ($_POST['mass_action'] == "delete"){
-						mysql_query("DELETE FROM applications WHERE id = '".(int)$id."'"); 
+						//$db->query("DELETE FROM applications WHERE id = '".(int)$id."'"); 
+						$db->delete("applications", array("id" => (int)$id)); 
 					 }elseif($_POST['mass_action'] == "suspend"){
-						 mysql_query("UPDATE applications SET active = '0' WHERE id = '".(int)$id."'");
-						 mysql_query("UPDATE applications SET defaults = '0' WHERE id = '".(int)$id."'");
-						 mysql_query("UPDATE applications SET defaults = '0' LIMIT 1");
+						 $db->update("applications", array("active" => "0"), array("id" => (int)$id));
+						 $db->update("applications", array("defaults" => "0"), array("id" => (int)$id));
+
+						 $db->update("applications", array("defaults" => "0"), array(), "LIMIT 1");
 					 }elseif($_POST['mass_action'] == "unsuspend"){
-						 mysql_query("UPDATE applications SET active = '1' WHERE id = '".(int)$id."'");
+						 $db->update("applciations", array("active" => "1"), array("id" => (int)$id));
 					 }
 				 }
 			}
@@ -458,11 +471,25 @@ echo $output;
 					echo "ID is invalid.";
 				}else{
 					// Set all other ones to not default.
-					mysql_query("UPDATE applications SET defaults = '0'");
+					//$db->query("UPDATE applications SET defaults = '0'");
+					$db->update("applications", array("defaults" => "0"), array());
 					// set only our id to default.
-					mysql_query("UPDATE applications SET defaults = '1' WHERE id = '".mysql_real_escape_string($id)."'");
+					//$db->query("UPDATE applications SET defaults = '1' WHERE id = '".mysql_real_escape_string($id)."'");
+					$db->update("applications", array("default" => "1"), array("id" => $id));
 					echo "Updated.";
 				}
+			}
+			
+			if (isset($_GET['method']) == true && $_GET['method'] == "saveNews"){
+				$id = $_GET['id'];
+				$content = $_POST['content'];
+				
+				if ($db->numRows($db->select("news", "*", array("aid" => $id))) == 0){
+					$db->insert("news", array("aid" => $id, "content" => $content));
+				}else{
+					$db->update("news", array("content" => $content), array("aid" => $id));
+				}
+				echo "News updated.";
 			}
 			
 			if (isset($_GET['method']) == true && $_GET['method'] == "editNews"){
@@ -475,14 +502,17 @@ echo $output;
 				<div class="widget">
 					<div class="wTitle">Manage News</div>
 					<div class="wContent">
-						<?php
-							$query = mysql_query("SELECT * FROM news WHERE aid = '".mysql_real_escape_string($id)."'");
-							if (mysql_num_rows($query) == 0){
-								echo "<p>No Application News Found. Make Some.</p>";
-							}else{
-								
-							}
-						?>
+						<form action="index.php?a=applications&method=saveNews&id=<?php echo $_GET['id']; ?>" method="POST">
+							<div id="textHold">
+								<textarea name="content" rows="5"><?php
+									$run = $db->select("news", "content", array("aid" => $_GET['id']));
+									if ($db->numRows($run) != 0){
+										$array = $db->fetchRow($run);
+										echo $array[0];
+									}?></textarea><br />
+								<input type="submit" name="newSubmit" value="Save News" />
+							</div>
+						</form>
 					</div>
 				</div><br />
 				<?php
@@ -495,14 +525,14 @@ echo $output;
             	<table style="width: 100%;" id="table">
                 	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td><td>News</td></tr></thead>
              <?php
-			 $get_apps = mysql_query("SELECT * FROM applications");
+			 $get_apps = $db->select("applications");
 			 
-			 if (mysql_num_rows($get_apps)==0){
+			 if ($db->numRows($get_apps)==0){
 				echo "<tr><td colspan=\"50\"><b>No Applications Found</b></td></tr>"; 
 			 }else{
-				while($row = mysql_fetch_assoc($get_apps)){
+				while($row = $db->fetchAssoc($get_apps)){
 					if ($row['active'] == 1){ $status = "Active"; }else{ $status = "Inactive"; }
-					$users = mysql_num_rows(mysql_query("SELECT * FROM licences WHERE aid = '".$row['id']."' AND active = '1'"));
+					$users = $db->numRows($db->select("licences", "*", array("aid" => $row['id'], "active" => "1")));
 					$default = "No";
 					if ($row['defaults'] == "1"){ $default = "Yes"; }
 					$id = $row['id'];
@@ -552,29 +582,29 @@ echo $output;
 			<?php
 				if ($_GET['action'] == "delete"){
 					$id = $_GET['id'];
-					mysql_query("UPDATE bans SET exception = '1' WHERE id = '".mysql_real_escape_string($id)."'");	
+					$db->query("UPDATE bans SET exception = '1' WHERE id = '".mysql_real_escape_string($id)."'");	
 				}
 				if ($_GET['action'] == "flush_fail"){
-					mysql_query("DELETE FROM fail_log");	
+					$db->query("DELETE FROM fail_log");	
 				}
 				if ($_GET['action'] == "flush_bans"){
-					mysql_query("DELETE FROM bans");	
+					$db->query("DELETE FROM bans");	
 				}
 				if ($_GET['action'] == "flush_inactive_bans"){
-					mysql_query("DELETE FROM bans WHERE expires <= '".time()."' OR  exception = '1'");	
+					$db->query("DELETE FROM bans WHERE expires <= '".time()."' OR  exception = '1'");	
 				}
 				if (isset($_POST['newPass'])) {
 					if ($_POST['cpass'] == "" || $_POST['npass'] == "" || $_POST['npass1'] == ""){
 						$passChangeContent = "Missing information.";
 					}else{
-						$userInfo = mysql_query("SELECT * FROM users WHERE pass = '".md5($_POST['cpass'])."'");
-						if (mysql_num_rows($userInfo) == 0){
+						$userInfo = $db->query("SELECT * FROM users WHERE pass = '".md5($_POST['cpass'])."'");
+						if ($db->numRows($userInfo) == 0){
 							$passChangeContent = "Password incorrect.";
 						}else{
 							if ($_POST['npass'] != $_POST['npass1']){
 								$passChangeContent = "Passwords are not the same.";
 							}
-							mysql_query("UPDATE users SET pass = '".md5($_POST['npass'])."' WHERE id = '".mysql_real_escape_string($_SESSION['id'])."'");
+							$db->update("users", array("pass" => md5($_POST['npass'])), array("id" => $_SESSION['id']));
 							$passChangeContent = "Password Updated.";
 						}
 					}
@@ -584,10 +614,10 @@ echo $output;
         <div class="widget">
 <div class="wTitle">Flush</div>
 <div class="wContent hiddenInfo">
-<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM fail_log")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM access_log")); ?>)</b></div>
+<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo $db->numRows($db->select("fail_log", "*")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo $db->numRows($db->select("bans", "*")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?>)</b></div>
 </div><br />
 		<div class="widget">
 			<div class="wTitle">Change Password</div>
@@ -599,6 +629,13 @@ echo $output;
 					<label>Comfirm Password</label><input type="password" name="npass1" />
 					<input type="submit" name="newPass" value="Change Password" />
 				</form>
+			</div>
+		</div>
+		<br />
+		<div class="widget">
+			<div class="wTitle">Settings</div>
+			<div class="wContent">
+				<center><a href="index.php?a=settings">Settings</a></center>
 			</div>
 		</div>
         </div>
@@ -615,11 +652,11 @@ echo $output;
 					$query = $query . " WHERE expires >= '".time()."' AND exception = '0' ORDER BY time ASC";
 				}
 				
-                $get_bans = mysql_query($query) or die(mysql_error());
-				if (mysql_num_rows($get_bans)==0){
+                $get_bans = $db->query($query) or die(mysql_error());
+				if ($db->numRows($get_bans)==0){
 					echo "<tr><td colspan=\"5\"><center>No Active Bans Found. <a href=\"index.php?a=admin&action=showExpired\">Show inactive bans</a></center></td></tr>";
 				}else{
-					while($row = mysql_fetch_assoc($get_bans)){
+					while($row = $db->fetchAssoc($get_bans)){
 						// If the ban has expired don't show date or time.
 						if ($row['expires'] <= time()){
 							$expires = "Expired";	
@@ -654,9 +691,9 @@ echo $output;
 					$query = "SELECT * FROM access_log ORDER BY time DESC";
                     $query = $query . " LIMIT " . (10 * ((int)$page - 1)) . "," . (10 * (int)$page);
                     
-                    $count = mysql_num_rows(mysql_query($query));
-					$total_count = mysql_num_rows(mysql_query("SELECT * FROM access_log"));
-                    $get_access = mysql_query($query) or die(mysql_error());
+                    $count = $db->numRows($db->query($query));
+					$total_count = $db->numRows($db->query("SELECT * FROM access_log"));
+                    $get_access = $db->query($query) or die(mysql_error());
 					$total_pages = ceil($total_count / 10);
 					
 					$page_str = "Pages: ";
@@ -678,11 +715,11 @@ echo $output;
                     
                     
                     
-                    if (mysql_num_rows($get_access) == 0){
+                    if ($db->numRows($get_access) == 0){
                         echo "<tr><td colspan=\"3\"><center>No Access Logs Found.</center></td></tr>";
                     }else{
-                        while($row = mysql_fetch_assoc($get_access)){
-                            $app_name = mysql_fetch_row(mysql_query("SELECT name FROM applications WHERE id = '".$row['aid']."'"));
+                        while($row = $db->fetchAssoc($get_access)){
+                            $app_name = $db->fetchRow($db->query("SELECT name FROM applications WHERE id = '".$row['aid']."'"));
 							
 							$applicationName = $app_name[0];
 							if ($applicationName == ""){
@@ -695,25 +732,285 @@ echo $output;
                 
                 ?>
                 </table>
-                <span>Showing <b><?php echo $count; ?></b> of <b><?php echo mysql_num_rows(mysql_query("SELECT * FROM access_log")); ?></b></span>
+                <span>Showing <b><?php echo $count; ?></b> of <b><?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?></b></span>
                 <span id="pagination" style="position: inline; float: right; margin-right: 10px;"><?php echo $page_str; ?></span>
          </div>
     </div>
 </div>
     <?php
-}elseif($_GET['a'] == "support"){
-	// TODO Finish the support system.
+}elseif($_GET['a'] == "settings"){
 	?>
 	<div class="content">
 		<div class="grid_4">
-			Here you can manage all support tickets with your products.
+			<div class="widget">
+				<div class="wTitle">Settings</div>
+				<div class="wContent">
+					Manage all core settings along with plugin settings here.
+				</div>
+			</div>
 		</div>
 		<div class="grid_8">
-			<?php	
-				
-			?>
+			<div class="widget">
+				<div class="wTitle">Settings</div>
+				<div class="wContent">
+					
+					<?php
+						/***
+						 *	Loop through the groups of settings.
+						 */
+						 $action = $_GET['action'];
+
+						 if ($action == ""){
+							echo "<center>";
+							/***
+							 *	Display a list of all settings group.
+							 */
+							$run = $db->query("SELECT * FROM settingsgroup");
+							if ($db->numRows($run) == 0){
+								echo "<center><p>No Settings Found.</p></center>";
+							 }else{
+								while($row = $db->fetchAssoc($run)){
+									$activeSettings = $db->numRows($db->query("SELECT * FROM settingsitems WHERE sid = '".$row['id']."'"));
+									echo "<a href=\"index.php?a=settings&action=detailed&id={$row['id']}\">".$row['name']." (<b>{$activeSettings}</b>)</a><br />";
+								}
+							 }
+							 echo "</center>";
+						 }elseif($action == "detailed"){
+							/***
+							 *	Show all active settings for that particuar group.
+							 */
+							$id = $_GET['id'];
+							
+							$run = $db->query("SELECT * FROM settingsitems WHERE sid = '".mysql_real_escape_string($id)."'") or die(mysql_error());
+							if ($db->numRows($run) == 0){
+								echo "<center><p>No settings active.</p></center>";
+							}else{
+								echo "<form action=\"index.php?a=settings&action=submit&id={$id}\" method=\"POST\">";
+									while($row = $db->fetchAssoc($run)){
+										if ($row['type'] == "text"){
+											$type = "text";
+											$value = $row['value'];
+											echo "<label>{$row['name']}</label><input type=\"{$type}\" name=\"{$row['id']}\" value=\"{$value}\" />";
+										}elseif($row['type'] == "checkbox"){
+											$type = "checkbox";
+											$value = "";
+											if ($row['value'] == "on"){
+												$value = "checked";
+											}
+											echo "<input style=\"display: inline;\" type=\"{$type}\" name=\"{$row['id']}\" {$value}/>{$row['name']}";
+										}
+										echo "<br />";
+										
+									}
+									echo "<input type=\"submit\" name=\"sub\" value=\"Save Settings\" />";
+								echo "</form>";
+							}
+						 }elseif($action == "submit"){
+							/***
+							 *	Save the settings now.
+							 */
+							$id = $_GET['id'];
+							echo "<center>";
+							$run = $db->query("SELECT * FROM settingsitems WHERE sid = '".mysql_real_escape_string($id)."'");
+							if ($db->numRows($run) == 0){
+								echo "ERROR: Missing application data.";
+							}else{
+								$yes = 0;
+								while($row = $db->fetchAssoc($run)){
+									if ($row['type'] == "checkbox" && $_POST[$row['id']] != $row['value']){
+										$value = $_POST[$row['id']];
+										
+										if ($value == ""){
+											$value == "off";
+										}
+									
+										$db->update("settingsitems", array("value" => $value), array("id" => $row['id']));
+										$yes++;
+									}else{
+										if ($_POST[$row['id']] != $row['value']){
+											$db->query("UPDATE settingsitems SET value = '".mysql_real_escape_string($_POST[$row['id']])."' WHERE id = '".$row['id']."'");
+											$yes++;
+										}
+									}
+								}
+								if ($yes >= 1){
+									echo "Settings Updated.";
+								}else{
+									echo "No Settings Changed.";
+								}
+							}
+							echo "</center>";
+						 }
+					?>
+				</div>
+			</div>
 		</div>
 	</div>
+	<?php
+}elseif ($_GET['a'] == "support"){
+	echo "<br /><center>Support is not yet an active feature. Please wait till I have finished it. Expected to be in the next release.</center>";
+	/**
+	 *	This page will be where the admin can handle any support requests.
+	 
+	 */	
+	?>
+		<!-- Support still under contruction 
+		<div class="content">
+			<?php
+				$id = $_GET['id'];
+	
+				if ($_GET['func'] == "claim"){
+					$id = $_GET['id'];
+					
+					//$db->update("support", array("status" => "2", "operater" => $_SESSION['id']), array("id" => $id));
+					?>
+						<div class=\"grid_12\">
+							<div class="widget">
+								<div class="wTitle">Notfication</div>
+								<div class="wContent">
+									<center>You have claimed the ticket.</center>
+								</div>
+							</div>
+						</div>
+						<div class=\"clear\"></div>
+						<br />
+					<?php
+				}
+			?>
+			<div class="grid_4">
+				<div class="widget">
+					<div class="wTitle">Stats</div>
+					<div class="wContent">
+						<?php
+							if ($_GET['action'] != "detail"){
+								/**
+								 *	Stats to show here:
+								 *	total tickets made
+								 *	Average reply time
+								 *	best support staff TODO
+								 */
+							}else{
+								/**
+								 *	Shows various things the user can do to the ticket.
+								 */
+								echo "<a href=\"index.php?a=support&action=functions&func=claim&id={$id}\">Claim This Ticket</a>";
+								
+								
+							}
+						?>
+					</div>
+				</div>
+			</div>
+			<div class="grid_8">
+				<div class="widget">
+				<div class="widget">
+					<div class="wTitle">Replys</div>
+					<div class="wContent">
+						<?php
+							/**
+							 *	Show a detailed overview of the support ticket.
+							 */
+							
+							$tickets = $db->select("support", "*", array("id" => $id));
+							
+							if ($db->numRows($tickets) == 0){
+								// The ticket doesn't exist. Show an error.
+								echo "<center><b>The ticket doesn't exists. <a href=\"index.php?a=support\">Go back.</a></b></center>";
+							}else{
+								// The ticket exists. We can contine.
+								
+								while($row = $db->fetchAssoc($tickets)){
+									
+									if ($row['operater'] != "0"){
+										$getName = $db->select("users", "user", array("id" => $row['operater']));
+										if ($db->numRows($getName) == 0){
+											$name = "ERROR";
+										}else{
+											$names = $db->fetchRow($getName);
+											$name = $names[0];
+										}
+									}else{
+										$name = "Unclaimed";
+									}
+									
+									/**
+									 *	Generate the final name of the status
+									 */
+									$statusName = $db->select("ticketstatus", "name", array("id" => $row['status']));
+									if ($db->numRows($statusName) == 0){
+										$status = "ERROR";
+									}else{
+										$array = $db->fetchRow($statusName);
+										$status = $array[0];
+									}
+									
+									?>
+										<table style="width: 100%;">
+											<tr><td width="30%"><?php echo $row['subject']; ?></td><td width="15%"><?php echo startRating((int)$row['rating']); ?></td><td width="40%"><?php echo timeAgo(time() - $row['time']); ?></td></tr>
+											<tr><td colspan="3" style="text-align: left;"><?php echo $row['body']; ?></td></tr>
+											<tr><td width="30%"><a href="mailto:<?php echo $row['replymail']; ?>"><?php echo $row['replymail']; ?></a></td><td width="40%"><?php echo $status; ?></td><td width="40%"><?php echo $name; ?></td></tr>
+										</table>
+									<?php
+								}
+							}
+						?>
+					</div>
+				</div>
+			</div>
+			<div class="clear"></div>
+			<br />
+			<div class="grid_4">&nbsp;</div>
+			<div class="grid_8">
+				<?php
+					if ($_GET['action'] == "detail"){
+				?>
+				<div class="widget">
+					<div class="wTitle">Reply To Ticket (Will automaticly claim)</div>
+					<div class="wContent">
+						<form action="index.php?a=support&action=functions&func=reply&id=<?php echo $id; ?>" method="POST">
+							<textarea cols="100%" rows="5"></textarea><br />
+							<select>
+								<?php
+									// First find the current status we are using for this ticket
+									$current = $db->select("support", "status", array("id" => $id));
+									if ($db->numRows($current) == 0){
+										echo "ERROR.";
+									}else{
+										$value = $db->fetchRow($current);
+										$current = $value[0];
+										// Echo the default one first.
+										$get = $db->select("ticketstatus", "*", array("id" => $current));
+										if ($db->numRows($get) == 0){
+											echo "ERROR.";
+										}else{
+											while($row = $db->fetchAssoc($get)){
+												echo "<option value=\"{$row['id']}\">{$row['name']}</option>";
+											}
+										}
+									}
+								
+									// Find all active status adn list them.						
+									$status = $db->query("SELECT * FROM ticketstatus WHERE id != '".$current."'");
+									if ($db->numRows($status) == 0){
+										echo "ERROR.";
+									}else{
+										while($row = $db->fetchAssoc($status)){
+											// echo the results
+											echo "<option value=\"{$row['id']}\">{$row['name']}</option>";
+										}
+									}
+								?>
+							</select>
+						</form>
+					</div>
+				</div>
+				<?php
+					}else{
+						echo "&nbsp;";
+					}
+				?>
+			</div>
+		</div>-->
 	<?php
 }
 ?>

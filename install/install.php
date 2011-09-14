@@ -66,50 +66,69 @@ if (file_exists("../includes/config.php") == true){
 				}
 			}
 		}
-		// The should be if we get to this point.
-		// create file.
-		$config_file = "../includes/config.php";
-		$con_file = fopen($config_file, "w") or die("Unable to create config file.");
 		
-		// Generate the config files.
-		$file_str .= "<?php\n";
-		$file_str .= "// Created at: ".date("d/m/Y h:i:s", time())."\n";
-		$file_str .= "define(\"HOST\", \"".$_POST['db_host']."\");\n";
-		$file_str .= "define(\"USER\", \"".$_POST['db_user']."\");\n";
-		$file_str .= "define(\"PASS\", \"".$_POST['db_pass']."\");\n";
-		$file_str .= "define(\"DATABASE\", \"".$_POST['db_name']."\");\n";
-		$file_str .= "?>";
+		if (!@mysql_connect($_POST['db_host'], $_POST['db_user'], $_POST['db_pass'])){
+			echo "<b>Unable to connect to mysql database using:</b> <br />Host: <b>".$_POST['db_host']."</b><br />User: <b>".$_POST['db_user']."</b><br />Pass: <b>".$_POST['db_pass']."";
+		}else{
 		
-		fwrite($con_file, $file_str);
-		fclose($con_file);
+			if (!@mysql_select_db($_POST['db_name'])){
+				echo "<b>Unable to connect to <b>".$_POST['db_name']."</b>";
+			}else{
+				// The should be if we get to this point.
+				// create file.
+				$config_file = "../includes/config.php";
+				$con_file = fopen($config_file, "w") or die("Unable to create config file.");
 				
-		mysql_connect($_POST['db_host'], $_POST['db_user'], $_POST['db_pass']);
-		mysql_select_db($_POST['db_name']);
-		
-		function LoadSQL($file){
-			$sql = fopen($file, "r");
-			$query = fread($sql, filesize($file));
-			fclose($sql);
-			mysql_query($query);
-			return "<span style=\"color: green;\"><b>".$file."</b> has been loaded into the database.</span><br />";
-		}
-			
-		$dir = "sql/*";	
-		foreach(glob($dir) as $file)
-		{
-			echo LoadSQL($file);
-		}
-		
-		// Now include the admin users.
-		mysql_query("INSERT INTO users(user,pass,activated) VALUES('".mysql_real_escape_string($_POST['user'])."', '".md5($_POST['pass'])."', '1')") or die(mysql_error());
-		echo "<br /><span style=\"color: green;\"><b>Admin User Created. Install Complete.</b></span><br />";
+				// Generate the config files.
+				$file_str .= "<?php\n";
+				$file_str .= "// Created at: ".date("d/m/Y h:i:s", time())."\n";
+				$file_str .= "define(\"HOST\", \"".$_POST['db_host']."\");\n";
+				$file_str .= "define(\"USER\", \"".$_POST['db_user']."\");\n";
+				$file_str .= "define(\"PASS\", \"".$_POST['db_pass']."\");\n";
+				$file_str .= "define(\"DATABASE\", \"".$_POST['db_name']."\");\n";
+				$file_str .= "?>";
+				
+				fwrite($con_file, $file_str);
+				fclose($con_file);
+						
+				mysql_connect($_POST['db_host'], $_POST['db_user'], $_POST['db_pass']);
+				mysql_select_db($_POST['db_name']);
+				
+				/*
+				function LoadSQL($file){
+					$sql = fopen($file, "r");
+					$query = fread($sql, filesize($file));
+					fclose($sql);
+					mysql_query($query) or die(mysql_error());
+					return "<span style=\"color: green;\"><b>".$file."</b> has been loaded into the database.</span><br />";
+				}
+				*/
+				
+				require_once("sql/createTables.php");
+				foreach ($table as $value){
+					mysql_query($value) or die("<span style=\"color: red;\"><b>".mysql_error()."</b></span><br />");
+					echo "<span style=\"color: green;\"><b>SQL query excecuted.</b></span><br />";
+				}
+				
+				require_once("sql/insertData.php");
+				foreach ($rows as $value){
+					mysql_query($value) or die("<span style=\"color: red;\"><b>".mysql_error()."</b></span><br />");
+					echo "<span style=\"color: green;\"><b>SQL query excecuted.</b></span><br />";
+				}
+				
+				
+				// Now include the admin users.
+				mysql_query("INSERT INTO users(user,pass,activated) VALUES('".mysql_real_escape_string($_POST['user'])."', '".md5($_POST['pass'])."', '1')") or die(mysql_error());
+				echo "<br /><span style=\"color: green;\"><b>Admin User Created. Install Complete.</b></span><br />";
 
-		// Create a lock file to prevent tampering with install.
-		fopen("LOCK", "w");
-		echo "<span style=\"color: green;\"><b>LOCK file created.</b></span>";
-		
-		// Everything is installed.
-		echo "<br /><br />Your install of iAuth is complete. You can now login with the details you provided.";
+				// Create a lock file to prevent tampering with install.
+				fopen("LOCK", "w");
+				echo "<span style=\"color: green;\"><b>LOCK file created.</b></span>";
+				
+				// Everything is installed.
+				echo "<br /><br />Your install of iAuth is complete. You can now login with the details you provided.";
+			}
+		}
 		
 	}
 }
