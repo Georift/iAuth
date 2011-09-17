@@ -6,6 +6,7 @@ session_start();
  */
 define("IN_SCRIPT", 1);
 
+
 /**
  * Defines the current version of iAuth
  */

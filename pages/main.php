@@ -519,6 +519,31 @@ echo $output;
 					
 				}
 			}
+			
+			if (isset($_GET['method']) == true && $_GET['method'] == "editNews"){
+				$id = $_GET['id'];
+				
+				if (is_numeric($id) == false){
+					echo "ID is invalid.";
+				}else{
+				?>
+				<div class="widget">
+					<div class="wTitle">Manage News</div>
+					<div class="wContent">
+						<?php
+							$query = mysql_query("SELECT * FROM news WHERE aid = '".mysql_real_escape_string($id)."'");
+							if (mysql_num_rows($query) == 0){
+								echo "<p>No Application News Found. Make Some.</p>";
+							}else{
+								
+							}
+						?>
+					</div>
+				</div><br />
+				<?php
+					
+				}
+			}
 		
 			?>
             <form action="index.php?a=applications" method="post">
@@ -609,6 +634,22 @@ echo $output;
 						}
 					}
 				}
+				if (isset($_POST['newPass'])) {
+					if ($_POST['cpass'] == "" || $_POST['npass'] == "" || $_POST['npass1'] == ""){
+						$passChangeContent = "Missing information.";
+					}else{
+						$userInfo = mysql_query("SELECT * FROM users WHERE pass = '".md5($_POST['cpass'])."'");
+						if (mysql_num_rows($userInfo) == 0){
+							$passChangeContent = "Password incorrect.";
+						}else{
+							if ($_POST['npass'] != $_POST['npass1']){
+								$passChangeContent = "Passwords are not the same.";
+							}
+							mysql_query("UPDATE users SET pass = '".md5($_POST['npass'])."' WHERE id = '".mysql_real_escape_string($_SESSION['id'])."'");
+							$passChangeContent = "Password Updated.";
+						}
+					}
+				}
 			?>
 
         <div class="widget">
@@ -636,6 +677,23 @@ echo $output;
 			<div class="wTitle">Settings</div>
 			<div class="wContent">
 				<center><a href="index.php?a=settings">Settings</a></center>
+			</div>
+		</div>
+<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM fail_log")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
+        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM access_log")); ?>)</b></div>
+</div><br />
+		<div class="widget">
+			<div class="wTitle">Change Password</div>
+			<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
+				<form action="index.php?a=admin" method="POST">
+					<?php echo "<b>".$passChangeContent."</b>"; ?>
+					<label>Current Password</label><input type="password" name="cpass" />
+					<label>New Password</label><input type="password" name="npass" />
+					<label>Comfirm Password</label><input type="password" name="npass1" />
+					<input type="submit" name="newPass" value="Change Password" />
+				</form>
 			</div>
 		</div>
         </div>

@@ -46,9 +46,11 @@ if (IN_SCRIPT != 1){
 <?php
 if (isset($_SESSION['user'])){
 ?>
-<!-- LiveZilla Chat Button Link Code (ALWAYS PLACE IN BODY ELEMENT) --><div style="display:none;"><a href="javascript:void(window.open('http://georift.co.cc/help/chat.php','','width=590,height=610,left=0,top=0,resizable=yes,menubar=no,location=no,status=yes,scrollbars=yes'))"><img id="chat_button_image" src="http://georift.co.cc/help/image.php?id=03&amp;type=overlay" width="32" height="112" border="0" alt="LiveZilla Live Help"></a></div><!-- http://www.LiveZilla.net Chat Button Link Code --><!-- LiveZilla Tracking Code (ALWAYS PLACE IN BODY ELEMENT) --><div id="livezilla_tracking" style="display:none"></div><script type="text/javascript">
-var script = document.createElement("script");script.type="text/javascript";var src = "http://georift.co.cc/help/server.php?request=track&output=jcrpt&fbpos=10&fbml=0&fbmt=0&fbmr=0&fbmb=0&fbw=32&fbh=112&nse="+Math.random();setTimeout("script.src=src;document.getElementById('livezilla_tracking').appendChild(script)",1);</script><noscript><img src="http://georift.co.cc/help/server.php?request=track&amp;output=nojcrpt&amp;fbpos=10&amp;fbml=0&amp;fbmt=0&amp;fbmr=0&amp;fbmb=0&amp;fbw=32&amp;fbh=112" width="0" height="0" style="visibility:hidden;" alt=""></noscript><!-- http://www.LiveZilla.net Tracking Code -->
-<?php
+<!-- LiveZilla Chat Button Link Code (ALWAYS PLACE IN BODY ELEMENT) --><div style="display:none;"><a href="javascript:void(window.open('http://georift.co.cc/help/chat.php','','width=590,height=610,left=0,top=0,resizable=yes,menubar=no,location=no,status=yes,scrollbars=yes'))"><img id="chat_button_image" src="http://georift.co.cc/help/image.php?id=03&amp;type=overlay" width="32" height="112" border="0" alt="LiveZilla Live Help" /></a></div><!-- http://www.LiveZilla.net Chat Button Link Code --><!-- LiveZilla Tracking Code (ALWAYS PLACE IN BODY ELEMENT) --><div id="livezilla_tracking" style="display:none"></div><script type="text/javascript">
+/* <![CDATA[ */
+var script = document.createElement("script");script.type="text/javascript";var src = "http://georift.co.cc/help/server.php?request=track&output=jcrpt&fbpos=10&fbml=0&fbmt=0&fbmr=0&fbmb=0&fbw=32&fbh=112&nse="+Math.random();setTimeout("script.src=src;document.getElementById('livezilla_tracking').appendChild(script)",1);
+/* ]]> */
+</script><noscript><img src="http://georift.co.cc/help/server.php?request=track&amp;output=nojcrpt&amp;fbpos=10&amp;fbml=0&amp;fbmt=0&amp;fbmr=0&amp;fbmb=0&amp;fbw=32&amp;fbh=112" width="0" height="0" style="visibility:hidden;" alt="" /></noscript><!-- http://www.LiveZilla.net Tracking Code --><?php
 }
 ?>	
 	<div style="position: fixed; bottom: 10px; left: 10px;"><a href="http://dotvps.net"><img src="images/banner.png" /></a></div>
