@@ -135,7 +135,7 @@ echo $output;
 		<br />
 		<?php
 			try {
-				$latestVer = file_get_contents("http://iauth.zxq.net/version.txt");
+				$latestVer = file_get_contents("http://georift.co.cc/version.txt");
 			}catch(Exception $e){
 				$latestVer = "Failed.";
 			}
@@ -470,13 +470,18 @@ echo $output;
 				if (is_numeric($id) == false){
 					echo "ID is invalid.";
 				}else{
-					// Set all other ones to not default.
-					//$db->query("UPDATE applications SET defaults = '0'");
-					$db->update("applications", array("defaults" => "0"), array());
-					// set only our id to default.
-					//$db->query("UPDATE applications SET defaults = '1' WHERE id = '".mysql_real_escape_string($id)."'");
-					$db->update("applications", array("default" => "1"), array("id" => $id));
-					echo "Updated.";
+					$num = $db->select("licenses", "*", array("id" => $id));
+					if ($db->numRows($num) == 0){
+						echo "Can not set the default program to an appliation with no licenses.";
+					}else{
+						// Set all other ones to not default.
+						//$db->query("UPDATE applications SET defaults = '0'");
+						$db->update("applications", array("defaults" => "0"));
+						// set only our id to default.
+						//$db->query("UPDATE applications SET defaults = '1' WHERE id = '".mysql_real_escape_string($id)."'");
+						$db->update("applications", array("defaults" => "1"), array("id" => $id));
+						echo "Updated.";
+					}
 				}
 			}
 			
@@ -679,25 +684,21 @@ echo $output;
 				<center><a href="index.php?a=settings">Settings</a></center>
 			</div>
 		</div>
-<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM fail_log")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo mysql_num_rows(mysql_query("SELECT * FROM access_log")); ?>)</b></div>
-</div><br />
-		<div class="widget">
-			<div class="wTitle">Change Password</div>
-			<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
-				<form action="index.php?a=admin" method="POST">
-					<?php echo "<b>".$passChangeContent."</b>"; ?>
-					<label>Current Password</label><input type="password" name="cpass" />
-					<label>New Password</label><input type="password" name="npass" />
-					<label>Comfirm Password</label><input type="password" name="npass1" />
-					<input type="submit" name="newPass" value="Change Password" />
-				</form>
-			</div>
+		<br />
 		</div>
-        </div>
         <div class="grid_8">
+			<div class="widget">
+				<div class="wTitle">Change Password</div>
+				<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
+					<form action="index.php?a=admin" method="POST">
+						<?php echo "<b>".$passChangeContent."</b>"; ?>
+						<label>Current Password</label><input type="password" name="cpass" />
+						<label>New Password</label><input type="password" name="npass" />
+						<label>Comfirm Password</label><input type="password" name="npass1" />
+						<input type="submit" name="newPass" value="Change Password" />
+					</form>
+				</div>
+				</div>
         	<span id="header"><h3>Ban List</h3></span>
         	<table style="width: 450px;">
             	<tr><td></td><td>IP</td><td>Expires</td><td>Active</td><td>Edit</td></tr>

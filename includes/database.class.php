@@ -111,6 +111,7 @@ class MySQL {
 		if ($debug == 1){
 			return $fullQuery;
 		}
+		
 		return mysql_query($fullQuery);
 	}
 	
