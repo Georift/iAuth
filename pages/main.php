@@ -132,27 +132,6 @@ echo $output;
 ?>
 			</div>
 		</div>
-		<br />
-		<?php
-			try {
-				$latestVer = file_get_contents("http://georift.co.cc/version.txt");
-			}catch(Exception $e){
-				$latestVer = "Failed.";
-			}
-			if ($latestVer > VERSION){
-				$warning = "<span style = \"color: red;\"><b>New Version Avaliable.</b></span>";
-			}
-		?>
-		<div class="widget">
-			<div class="wTitle">Version Information</div>
-			<div class="wContent">
-				<p>
-					Current Version: <b><?php echo VERSION; ?></b><br />
-					Latest Version: <b><?php echo $latestVer; ?></b><br />
-					<?php echo $warning; ?>
-				</p>
-			</div>
-		</div>
 	</div>
 	<div class="grid_8">
 		<div class="widget">
