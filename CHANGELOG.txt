@@ -1,5 +1,6 @@
 CHANGE LOG
 ---------
+v1.02a - 27/3/2013 - Removed DotVPS logo and Livezilla tracking. PART Release.
 V1.02 - 28/7/2011 - Major Update. Fixed many bugs and tidied code.
 V1.01 - 29/7/2011 - Updated several small bugs.
 V1.00 - 25/7/2011 - First Release. 
