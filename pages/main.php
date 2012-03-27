@@ -40,10 +40,10 @@ function findDefault(){
 
 $aid = findDefault();	
 //$get_active = $db->numRows($db->query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '1'"));
-$get_active = $db->numRows($db->select("licences", "*", array("aid" => $aid, "active" => "1")));
+$get_active = $db->numRows($db->select("licences", "*", array("active" => "1")));
 
 //$get_inactive = $db->numRows($db->query("SELECT * FROM licences WHERE aid = '{$aid}' AND active = '0'"));
-$get_inactive = $db->numRows($db->select("licences", "*", array("aid" => $aid, "active" => "0")));
+$get_inactive = $db->numRows($db->select("licences", "*", array("active" => "0")));
 
 //$get_today = $db->query("SELECT * FROM access_log WHERE aid = '{$aid}'") or die(mysql_error());
 $get_today = $db->select("access_log", "*", array("aid" => $aid)) or die(mysql_error());
@@ -170,6 +170,42 @@ echo $output;
 		echo "<div class=\"grid_3\">";
 			echo "All licences that are currently active are listed on the right hand side. To manage them click on the pencil icon, or to manage multiple licences at once use the check boxs and the mass tools at the bottom of the page.";
 		echo "</div>";
+	
+		                    
+				// Submit form for create new serial.
+					if ($_GET['sub'] == "submit_form"){
+						$app = (int)$_POST['app'];
+						$serial = mysql_real_escape_string($_POST['serial']);
+						$user = mysql_real_escape_string($_POST['user']);
+						if ($pass != ""){
+							$pass = md5($_POST['pass']);
+						}
+						$date = strtotime(str_replace("/", "-", $_POST['date']));
+						
+						if ($serial == ""){
+							echo "Failed";	
+						}else{
+							mysql_query("INSERT INTO licences(aid, expires, active, serial, user, pass) VALUES('".(int)$app."','".$date."','1','".$serial."','".$user."','".$pass."')") or die(mysql_error());
+							
+							$get_app = mysql_query("SELECT * FROM licences WHERE serial = '".$serial."'");
+							
+							while($row = mysql_fetch_assoc($get_app)){
+								
+								$application_name = mysql_fetch_row(mysql_query("SELECT name FROM applications WHERE id = '".$row['aid']."'"));
+								
+								if ($row['expires'] == 0){ $expires = "Never"; }else{ $expires = date("d/m/Y",$row['expires']); }
+								if ($row['active'] == 1){
+									$active = "<img src=\"images/accept.png\" />";
+								}else{ 
+									$active = "<img src=\"images/cancel.png\" />";
+								}
+								
+								$rowID = mysql_fetch_row(mysql_query("SELECT id FROM licences WHERE serial = '".$serial."'"));
+							}
+						}
+					}
+			
+					
 		
 		// Left Side Bar
 		echo "<div class=\"grid_9\">";
@@ -281,7 +317,7 @@ echo $output;
 					echo $alert;
 				}
 				
-				echo "<form action=\"index.php?a=licences\" method=\"POST\"><table style=\"width: 100%;\" class=\"table\" id=\"table\"><thead><tr><td></td><td>ID</td><td>Application</td><td>Serial</td><td>Expires</td><td>Suspended</td><td>Username</td><td></td></tr></thead>\n";
+				echo "<form action=\"index.php?a=licences\" method=\"POST\"><table style=\"width: 100%;\" class=\"table\" id=\"table\"><thead><tr><td></td><td>ID</td><td>Application</td><td>Serial</td><td>Expires</td><td>Active</td><td>Username</td><td></td></tr></thead>\n";
 				
 				//$get_licences = $db->query($query) or die(mysql_error());
 				$get_licences = $db->select("licences", "*", $queryArray) or die(mysql_error());
@@ -377,6 +413,7 @@ echo $output;
 						}
 						
 					</script>
+
 					<div id="infoBox" style="display:none; background-color: #EAEAEA; padding: 10px; width: 500px;">
 					</div><br />
 					<div class="widget">
@@ -387,7 +424,7 @@ echo $output;
 								echo "<p>Please create an application first.</p>";
 							}else{
 						?>
-							<form id="newLicence" action="" method="post">
+							<form id="newLicence" action="index.php?a=licences&sub=submit_form" method="post">
 								<label>Application:</label><select name="app">
 									<?php
 										// Generate a list of all applications.
@@ -403,7 +440,7 @@ echo $output;
 								</select>
 								<label>Serial: <a href="#" onclick="javascript:GenSerial();">Generate</a></label><input type="text" id="serial" name="serial" size="32"/>
 								<label>Expires:</label><input type="text" id="datepicker" name="date" />
-								<input type="submit" id="gen" name="gen" value="Go" onclick="javascript:PostNew();return false;" />
+								<input type="submit" id="gen" name="gen" value="Go"/>
 							</form>
 							<?php } ?>
 						</div>
