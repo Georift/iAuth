@@ -1,0 +1,11 @@
+To install iAuth please follow the steps listed below so you can have a safe and happy installation.
+
+Step 1) CHMOD the install folder to 777. This is requred to the install script can run and wont bug.
+Step 2) Delete the file named "LOCK" in the install/ directory.
+Step 3) Navigate to the install/ directory via your web browser.
+Step 4) Simply follow the prompts and you're installation of iAuth should be complete.
+
+NOTE: Please make sure that the account you provide for iAuth has access to the database you list and also has required permisions to
+create and insert into tables. If not then you may run into issues during installation.
+
+http://github.com/georift/iauth/
