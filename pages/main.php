@@ -257,7 +257,7 @@ echo $output;
 					$db->update("licences", $runArray, array("id" => $_GET['id']));
 				}
 				$id = $_GET['id'];
-				if ($id == "" AND is_int($id) == false){
+				if ($id == "" OR is_int($id) == false){
 					echo "<b>ID is not valid.</b>";
 				}else{
 					// ID is valid.
