@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ERROR);
 session_start();
 define("IN_SCRIPT", 1);
 
@@ -9,6 +10,7 @@ require_once("includes/bans.php");
 $plugin = new Plugins;
 $auth = new auth;
 $bans = new Bans;
+
 
 $f = glob("plugins/*.php");
 foreach($f as $a){

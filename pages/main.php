@@ -112,6 +112,7 @@ function drawChart2() {
 	chart.draw(data, {width: 420, height: 240, title: 'Hourly Access To The Application'});
 }
 </script>
+<script src="js/jtip.js" type="text/javascript"></script>
 <?php
 
 // User should be logged in.
@@ -249,16 +250,14 @@ echo $output;
 					if ($_POST['pass'] != "Password Hidden"){
 						$runArray['pass'] = md5($pass);
 					}
-					if($_POST['pass'] == ""){
-						$runArray['pass'] = "";
-					}
+					
 					$runArray['serial'] = $_POST['serial'];
 
 					$db->update("licences", $runArray, array("id" => $_GET['id']));
 				}
 				$id = $_GET['id'];
-				if ($id == "" AND is_int($id) == false){
-					echo "<b>ID is not valid.</b>";
+				if (is_numeric($id) == false){
+					echo "<b>License ID's must be numeric.</b>";
 				}else{
 					// ID is valid.
 					$userData = $auth->loadUserData($id);
@@ -297,7 +296,6 @@ echo $output;
 										<label>Expires:</label><input type="text" id="datepicker" name="expires" value="<?php If($userData['expires'] != ""){ echo date("d/m/Y", $userData['expires']); } ?>" />
 										<label>Serial:</label><input type="text" size="35" name="serial" width="50px" value="<?php echo $userData['serial']; ?>" />
 										<label>Username:</label><input type="text" name="user" value="<?php echo $userData['user']; ?>" />
-										<label>Password:</label><input type="text" name="pass" value="<?php if($userData['pass'] != ""){ ?>Password Hidden<?php } ?>" />
 										<input type="checkbox" name="active" <?php if ($userData['active'] == "1"){ echo "checked"; } ?> style="display: inline;">Active
 										<input type="submit" name="updateLicence" value="Update" />
 									</form>
@@ -316,16 +314,35 @@ echo $output;
 					$alert = "Only showing active licences from <a href=\"index.php?a=applications\">".$applet_name[0]."</a>\n";
 					echo $alert;
 				}
+				?>
 				
-				echo "<form action=\"index.php?a=licences\" method=\"POST\"><table style=\"width: 100%;\" class=\"table\" id=\"table\"><thead><tr><td></td><td>ID</td><td>Application</td><td>Serial</td><td>Expires</td><td>Active</td><td>Username</td><td></td></tr></thead>\n";
+				<script type="text/javascript">
+					$(function () {
+						$('#allCheck').click(function() { 
+							if (this.checked){
+								$(':checkbox').each(function() {
+									this.checked = true;
+								});
+							}else{
+								$(':checkbox').each(function() {
+									this.checked = false;
+								});
+							}
+						});
+					});
+				</script>
+				
+				<?php
+				echo "<form action=\"index.php?a=licences\" method=\"POST\" id='licensesform'><table style=\"width: 100%;\" class=\"table\" id=\"table\"><thead><tr><td><input type='checkbox' name='allCheck' id='allCheck' /></td><td>ID</td><td>Application</td><td>Serial</td><td>Expires</td><td>Active</td><td>Username</td><td></td></tr></thead>\n";
 				
 				//$get_licences = $db->query($query) or die(mysql_error());
-				$get_licences = $db->select("licences", "*", $queryArray) or die(mysql_error());
+				$get_licences = $db->select("licences", "*", $queryArray, "ORDER BY id") or die(mysql_error());
 				if ($db->numRows($get_licences) == 0){
 					echo "<tr class=\"none_tr\"><td colspan=\"50\"><center><b>No Licences Running.</b></center></td></tr>";	
 				}else{
 					
 					while($row = $db->fetchAssoc($get_licences)){
+						$active_license = $row['active'];
 						$application_name = $db->fetchRow($db->select("applications", "name", array("id" => $row['aid'])));
 						if ($row['expires'] == 0){ 
 							$expires = "Never";
@@ -334,9 +351,14 @@ echo $output;
 								$expires = date("d/m/Y",$row['expires']);
 							}else{
 								$expires = "<b>Expired</b>";
+								// check that the license is now unactive.
+								if($row['active']==1){
+									$db->update("licences", array("active" => 0), array("id" => $row['id']));
+									$active_license = 0;
+								}
 							}							
 						}
-						if ($row['active'] == 1){
+						if ($active_license == 1){
 							$active = "<img src=\"images/accept.png\" />";
 						}else{ 
 							$active = "<img src=\"images/cancel.png\" />";
@@ -378,6 +400,7 @@ echo $output;
 						
 						$(function() {
 							$( "#datepicker").datepicker();
+							$( "#datepicker2").datepicker({ dateFormat: 'dd-mm-yy' });
 						});
 						
 						function GenTime(){
@@ -440,9 +463,35 @@ echo $output;
 								</select>
 								<label>Serial: <a href="#" onclick="javascript:GenSerial();">Generate</a></label><input type="text" id="serial" name="serial" size="32"/>
 								<label>Expires:</label><input type="text" id="datepicker" name="date" />
+								<label>Duration:</label>
 								<input type="submit" id="gen" name="gen" value="Go"/>
 							</form>
 							<?php } ?>
+						</div>
+					</div>
+					<br />
+					<div class="widget">
+						<div class="wTitle">Bulk Generate Licenses</div>
+						<div class="wContent hiddeninfo">
+							<form action="custom.php?a=BulkGenerate" method="GET">
+								<label>Application:</label><select name="app">
+									<?php
+										// Generate a list of all applications.
+										$get_app = $db->select("applications", "*", array("active" => "1"));
+										if ($db->numRows($get_app) == 0){
+											echo "Failed";	
+										}else{
+											while($row = $db->fetchAssoc($get_app)){
+												echo "<option value=\"".$row['id']."\">".$row['name']."</option>";
+											}
+										}
+									?>
+								</select>
+								<input type="hidden" name="a" value="BulkGenerate" />
+								<label>Number of Licences:</label><input type="text" name="number" value="50" />
+								<label>Experation Date:</label><input type="text" id="datepicker2" name="expires"/>
+								<input type="submit" name="sub" value="Generate" />
+							</form>
 						</div>
 					</div>
 					<?php
@@ -450,6 +499,20 @@ echo $output;
 		echo "</div>";
 	echo "</div>";
 }elseif($_GET['a'] == "applications"){
+
+	if ($_GET['action'] == "newApp"){
+		$name = mysql_real_escape_string($_POST['name']);
+		
+		mysql_query("INSERT INTO applications (name, active, defaults) VALUES('".$name."', '1', '0') ") or die(mysql_error());
+		
+		$get_apps = mysql_query("SELECT * FROM applications WHERE name = '".$name."' LIMIT 1");
+		/*
+		while($row = mysql_fetch_assoc($get_apps)){
+			if ($row['active'] == 1){ $status = "Active"; }else{ $status = "Inactive"; }
+			$users = mysql_num_rows(mysql_query("SELECT * FROM licences WHERE aid = '".$row['id']."' AND active = '1'"));
+		}
+		*/
+	}
 	// Application Page
 	// List applications.
 	echo "<div class=\"content\">";
@@ -569,7 +632,7 @@ echo $output;
 			?>
             <form action="index.php?a=applications" method="post">
             	<table style="width: 100%;" id="table">
-                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td><td>News</td></tr></thead>
+                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td><!--<td>News</td>--></tr></thead>
              <?php
 			 $get_apps = $db->select("applications");
 			 
@@ -582,7 +645,7 @@ echo $output;
 					$default = "No";
 					if ($row['defaults'] == "1"){ $default = "Yes"; }
 					$id = $row['id'];
-					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid=".$row['id']."\">".$users."</a></td><td>{$status}</td><td>{$default} - <a href=\"index.php?a=applications&method=makeDefault&id={$id}\">Make Default</a></td><td>".$row['version']."</td><td><a href=\"index.php?a=applications&method=editNews&id={$id}\">Edit News</a></td></tr>";
+					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid=".$row['id']."\">".$users."</a></td><td>{$status}</td><td>{$default} - <a href=\"index.php?a=applications&method=makeDefault&id={$id}\">Make Default</a></td><td>".$row['version']."</td><!--<td><a href=\"index.php?a=applications&method=editNews&id={$id}\">Edit News</a></td>--></tr>";
 				}
 			 }
 			 
@@ -608,9 +671,9 @@ echo $output;
 			 <div class="widget">
 			 	<div class="wTitle">Create Application</div>
 				<div class="wContent hiddenInfo">
-					<form action="" method="POST" id="newapp">
+					<form action="index.php?a=applications&action=newApp" method="POST" id="newapp">
 						<label>Application Name:</label><input type="text" name="name" />
-						<input type="button" name="sub" id="sub" value="Create" onclick="javascript:postForm();return false;" />
+						<input type="submit" name="sub" id="sub" value="Create" />
 					</form>
 				 </div>
 			 </div>
@@ -703,7 +766,7 @@ echo $output;
 		<br />
 		</div>
         <div class="grid_8">
-			<div class="widget">
+			<!--<div class="widget">
 				<div class="wTitle">Change Password</div>
 				<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
 					<form action="index.php?a=admin" method="POST">
@@ -714,7 +777,7 @@ echo $output;
 						<input type="submit" name="newPass" value="Change Password" />
 					</form>
 				</div>
-				</div>
+				</div>  -->
         	<span id="header"><h3>Ban List</h3></span>
         	<table style="width: 450px;">
             	<tr><td></td><td>IP</td><td>Expires</td><td>Active</td><td>Edit</td></tr>
@@ -923,7 +986,7 @@ echo $output;
 	</div>
 	<?php
 }elseif ($_GET['a'] == "support"){
-	echo "<br /><center>Support is not yet an active feature. Please wait till I have finished it. Expected to be in the next release.</center>";
+	echo "<br /><center>The support system is currently under development.</center>"
 	/**
 	 *	This page will be where the admin can handle any support requests.
 	 

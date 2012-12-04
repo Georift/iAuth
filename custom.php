@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ERROR);
 session_start();
 // For custom requests that require only
 // output being the information. ie. Ajax requests.
@@ -17,7 +18,66 @@ if (isset($_SESSION['user'])==false)
 /**
  * Generate a licence serial and return it.
  */ 
-if ($_GET['a'] == "genSerial"){
+function genSerial() {
+	// generate a random serial for the applications use.
+	// format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+	// X = Random Data
+	
+	$charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	$charlen = strlen($charset);
+	
+	$serial = "";
+	
+	for ($i = 0; $i < 25; $i++){
+		$RandNum = rand(0, $charlen - 1);
+		$selectedChar = mb_substr($charset, $RandNum, 1);
+		
+		if (is_int($i / 5) AND $i != 0){
+			$serial .= "-";
+		}
+		$serial .= $selectedChar;
+	}
+	return $serial;
+}
+/** 
+ * For accessing the Gen Serial Function.
+ */
+if($_GET['a'] == "genSerial"){
+	echo genSerial();
+}
+
+if ($_GET['a'] == "BulkGenerate"){
+	$number = $_GET['number'];
+	$expires = $_GET['expires'];
+	
+	for ($i = 0; $i < $number; $i++){
+		$serial = genSerial();
+		
+		$checkSerial = mysql_query("SELECT * FROM licenses WHERE serial = '".$serial."'");
+		if (mysql_num_rows($checkSerial) > 0){
+			// The serial is in use, kill this one and subtract one from $i.
+			$i--;
+		}else{
+			$unixDate = strtotime($_GET['expires']);
+			if (is_numeric($unixDate) == false AND $_GET['expires'] != ""){
+				die("UNABLE TO PARSE THE EXPIRED TIME.");
+			}
+			if (!is_numeric($_GET['app'])){
+				die("AID Must be Numeric.");
+			}
+			echo $serial." - ".$unixDate."<br />";
+			mysql_query("INSERT INTO licences(aid, serial, expires, active) VALUES('".(int)$_GET['app']."', '".$serial."', '{$unixDate}', '1')") or die(mysql_error());
+			$count++;
+		}
+	}
+	echo "<hr /> <b>{$count}</b> Serials Generated.";
+}
+
+
+/**
+ * Generate a licence serial and return it. (Depreciated)
+ */ 
+if ($_GET['a'] == "genSerialOld"){
 	$salt = "jk28sk";
 	$rand_str = rand(0,10000001228);
 	echo md5($salt.$rand_str);
