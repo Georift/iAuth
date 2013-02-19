@@ -124,13 +124,34 @@ function drawChart2() {
 			<div class="wTitle">Panel Information</div>
 			<div class="wContent">
 <?php
-$sideBar .= "Hey, <b>{$_SESSION['user']}</b>. Welcome to your control panel. Here you can manage all of your program's HWID licences.<br /><br />";
+$sideBar .= "Hey, <b>{$_SESSION['user']}</b>. Welcome to your control panel. Here you can manage all of your program's HWID licences.";
 if ($_SESSION['lastlogin'] != 0){
-	$sideBar .= "<p>You last logged in: <b>".date("d/m/Y H:i:s", $_SESSION['lastlogin'])."</b> from the host: <b>{$_SESSION['lasthost']}</b>.</p>";
+	$sideBar .= "<br /><br /><p>You last logged in: <b>".date("d/m/Y H:i:s", $_SESSION['lastlogin'])."</b> from the host: <b>{$_SESSION['lasthost']}</b>.</p>";
 }
 $output = $plugin->runHook("indexSideBar", $sideBar);
 echo $output;
 ?>
+			</div>
+		</div>
+		<br />
+		<?php
+			// determine the latest version of iAuth from http://iauth.georift.net/VERSION
+			// Only show latest version if not upto date.
+			$version = file_get_contents("http://iauth.georift.net/VERSION");
+			
+			if ($version != VERSION){
+				// out of date, alert the user.
+				$alert = "<br /><a href='http://iauth.georift.net/' style='text-decoration: none;' target='_BLANK'><span style='color: red;'><b>A newer version of iAuth exists!<b></span></a>";
+			}else{
+				$alert = "<br /><span style='color: green;'><b>You are currently up to date.<b></span>";
+			}
+		
+		?>
+		<div class="widget">
+			<div class="wTitle">iAuth Updates</div>
+			<div class="wContent">
+				Current Version: <b><?php echo VERSION; ?></b>
+				<?php echo $alert; ?>
 			</div>
 		</div>
 	</div>
@@ -168,9 +189,11 @@ echo $output;
 	echo "<div class=\"content\">";
 		// Load a list of all licences.
 		// Left Side Bar
+		/* Just hide the side bar.
 		echo "<div class=\"grid_3\">";
 			echo "All licences that are currently active are listed on the right hand side. To manage them click on the pencil icon, or to manage multiple licences at once use the check boxs and the mass tools at the bottom of the page.";
 		echo "</div>";
+		 **/
 	
 		                    
 				// Submit form for create new serial.
@@ -209,7 +232,7 @@ echo $output;
 					
 		
 		// Left Side Bar
-		echo "<div class=\"grid_9\">";
+		echo "<div class=\"grid_12\">";
 			// Load any input first.
 			if (isset($_POST['sub']) == true){
 				// The button has been pressed now we can look through the check boxes

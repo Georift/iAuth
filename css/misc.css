@@ -1,0 +1,56 @@
+.wTitle {
+	background: #CAEAFF;
+	background: -moz-linear-gradient(#CAEAFF, #e2f2ff);
+	
+	color:#637897;
+	float:center;
+	font-family:arial,helvetica,sans-serif;
+	font-size:14px;
+	font-weight:bold;
+}
+
+.Serial {
+	width: 85px;
+	height: 27px;
+	text-align: center;
+	font-size: 20px;
+	text-transform: uppercase;
+}
+#serialContainer {
+	margin: 0 auto;
+	text-align: center;
+	font-size: 20px;
+}
+
+/* BUTTON CODE */
+a.activate{
+margin-top: 15px;
+-moz-border-radius:4px;
+-webkit-border-radius:4px;
+border-radius:4px;
+
+-moz-box-shadow:2px 2px 0 #C6E5E7;
+-webkit-box-shadow:2px 2px 0 #C6E5E7;
+box-shadow:2px 2px 0 #C6E5E7;
+
+background: -moz-linear-gradient(19% 75% 90deg, #CAEAFF, #e2f2ff);
+
+background: -webkit-gradient(linear, left top, left bottom, from(#e2f2ff), to(#CAEAFF));
+
+color:#637897;
+float:center;
+font-family:arial,helvetica,sans-serif;
+font-size:14px;
+font-weight:bold;
+padding:10px 25px;
+text-shadow:1px 1px 0 rgba(255, 255, 255, 0.7);
+text-transform:uppercase;
+text-decoration: none;
+border: 1px solid #C6E5E7;
+}
+
+a.activate:hover{
+background: -moz-linear-gradient(19% 75% 90deg,#C6E5FA, #e2f2ff);
+background: -webkit-gradient(linear, left top, left bottom, from(#e2f2ff), to(#C6E5FA));
+}
+/* END BUTTON */

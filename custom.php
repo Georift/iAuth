@@ -47,6 +47,10 @@ if($_GET['a'] == "genSerial"){
 }
 
 if ($_GET['a'] == "BulkGenerate"){
+	
+	header('Content-type: text/plain');
+	header('Content-Disposition: attachment; filename="GeneratedSerials.txt"');
+	
 	$number = $_GET['number'];
 	$expires = $_GET['expires'];
 	
@@ -65,12 +69,19 @@ if ($_GET['a'] == "BulkGenerate"){
 			if (!is_numeric($_GET['app'])){
 				die("AID Must be Numeric.");
 			}
-			echo $serial." - ".$unixDate."<br />";
+			
+			if ($unixDate == ""){
+				$actualDate = "Expires Never";
+			}else{
+				$actualDate = $unixDate;
+			}
+			
+			echo $serial." - ".$actualDate."\n";
 			mysql_query("INSERT INTO licences(aid, serial, expires, active) VALUES('".(int)$_GET['app']."', '".$serial."', '{$unixDate}', '1')") or die(mysql_error());
 			$count++;
 		}
 	}
-	echo "<hr /> <b>{$count}</b> Serials Generated.";
+	echo "{$count} Serials Generated.";
 }
 
 

@@ -11,7 +11,7 @@ define("IN_SCRIPT", 1);
 /**
  * Defines the current version of iAuth
  */
-define("VERSION", "1.02");
+define("VERSION", "1.2.1");
 
 /**
  *	Load includes/init.php to inilize all the main classes.
