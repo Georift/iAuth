@@ -280,7 +280,7 @@ echo $output;
 				}
 				$id = $_GET['id'];
 
-				if ($id == "" OR is_int($id) == false){
+				if (is_numeric($id) == false){
 					echo "<b>ID is not valid.</b>";
 				}else{
 					// ID is valid.
