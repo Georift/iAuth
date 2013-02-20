@@ -258,7 +258,7 @@ echo $output;
 					
 					$runArray['user'] = $_POST['user'];
 					$pass = md5($_POST['pass']);
-					$runArray['hwid'] = md5($_POST['HWID']);
+					$runArray['hwid'] = mysql_real_escape_string($_POST['HWID']);
 					if ($_POST['expires'] != ""){
 						$runArray['expires'] = strtotime(str_replace("/", "-", $_POST['expires']));
 						echo "Updated Licence Info";
@@ -823,7 +823,8 @@ echo $output;
 						if ($row['expires'] <= time()){
 							$expires = "Expired";	
 						}else{
-							$expires = date("d/m/Y h:i:s", $row['expires']);
+							$expires = timeToGo($row['expires'] - time());
+							//$expires = date("d/m/Y h:i:s", $row['expires']);
 						}
 						// Check if it's active.
 						if ($row['exception'] == "1" || $row['expires'] <= time()){
@@ -832,7 +833,7 @@ echo $output;
 							$active = "<img src=\"images/accept.png\" />";	
 						}
 						// Print out our row.
-						echo "<tr><td><input type=\"checkbox\" \></td><td>".$row['ip']."</td><td>".$expires."</td><td>{$active}</td><td><a href=\"index.php?a=admin&action=delete&id=".$row['id']."\">Delete</a></td></tr>";
+						echo "<tr><td><input type=\"checkbox\" \></td><td>".$row['ip']."</td><td>".$expires."</td><td>{$active}</td><td><a href=\"index.php?a=admin&action=delete&id=".$row['id']."\">Unban</a></td></tr>";
 					}
 					if ($_GET['action'] != "showExpired"){
 						echo "<tr><td colspan=\"5\"><center><a href=\"index.php?a=admin&action=showExpired\">Show inactive Bans</a></center></td></tr>";
