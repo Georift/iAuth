@@ -18,6 +18,9 @@ foreach($f as $a){
 }
 
 if ($_GET['a'] == "registerSerial"){
+	if ($bans->isbanned()){
+		die("You are currently banned from accessing this panel due to too many failed attempts. Try again soon.");
+	}
 	?>
 	<script language="javascript" type="text/javascript" src="js/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="css/960.css">
@@ -30,6 +33,35 @@ if ($_GET['a'] == "registerSerial"){
 			<div class="widget">
 				<div class="wTitle">Serial Registration</div>
 				<div class="wContent">
+					<?php
+						// Check if the form has been submitted.
+						if (isset($_POST['hidden'])){
+							
+							// our form has been submitted.
+							$serial_u = $_POST['serial1']."-".$_POST['serial2']."-".$_POST['serial3']."-".$_POST['serial4']."-".$_POST['serial5'];
+							$serial = mysql_real_escape_string($serial_u);
+							
+							$check = mysql_query("SELECT * FROM licences WHERE serial = '".$serial."'");
+							
+							if (mysql_num_rows($check) == 0){
+								// serial is invalid. Add to bans.
+								$bans->addStrike($_SERVER['REMOTE_ADDR']);
+								$error = "Serial is invalid. ".$serial;
+							}else{
+								// the serial came back valid.
+								$serialData = mysql_fetch_assoc($check);
+								if ($serialData['user'] != ""){
+									// the serial is already used.
+									$error = "Serial has already been activated.";
+								}else{
+									// the serial is still active.
+									
+								}
+							}
+						}
+					
+					
+					?>
 					<script type="text/javascript">
 						$(document).ready(function(){
 							$("input.serial").keypress(function() {
@@ -40,8 +72,9 @@ if ($_GET['a'] == "registerSerial"){
 						});
 					</script>
 					<form action="misc.php?a=registerSerial" method="POST">
-						<br />
+						<input type="hidden" name="hidden" value="yes" />
 						<div id="serialContainer">
+							<div id="errors" style="font-size: 15px; color: red; font-weight: bold; margin: 5px;"><?php if($error != ""){ echo $error; }else{ echo "&nbsp"; } ?> </div>
 							<input type="text" name="serial1" class="serial" /> - 
 							<input type="text" name="serial2" class="serial" /> - 
 							<input type="text" name="serial3" class="serial" /> - 
