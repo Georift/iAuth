@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ERROR);
 define("IN_SCRIPT", 1);
 // Validate if the user is real and if not ban their IP
 require_once("includes/init.php");

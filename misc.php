@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ERROR);
 session_start();
 define("IN_SCRIPT", 1);
 
@@ -10,75 +11,80 @@ $plugin = new Plugins;
 $auth = new auth;
 $bans = new Bans;
 
+
 $f = glob("plugins/*.php");
 foreach($f as $a){
 	require_once($a);
 }
 
 if ($_GET['a'] == "registerSerial"){
+	if ($bans->isbanned()){
+		die("You are currently banned from accessing this panel due to too many failed attempts. Try again soon.");
+	}
 	?>
+	<script language="javascript" type="text/javascript" src="js/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="css/960.css">
     <link rel="stylesheet" type="text/css" href="css/reset.css">
-   <!-- <link rel="stylesheet" type="text/css" href="css/main.css"/>-->
-    <link rel="stylesheet" type="text/css" href="css/ui-lightness/jquery-ui-1.8.14.custom.css"/>
 	<link rel="stylesheet" type="text/css" href="css/widgets.css" />
+	<link rel="stylesheet" type="text/css" href="css/misc.css" />
 	<div class="container_12">
 		<br />
-		<div class="grid_6 push_3">
+		<div class="grid_8 push_2">
 			<div class="widget">
 				<div class="wTitle">Serial Registration</div>
 				<div class="wContent">
-				<?php
-					if (isset($_POST['sub'])==true){
-						$user = mysql_real_escape_string($_POST['user']);
-						$pass = mysql_real_escape_string($_POST['pass']);
-						$pass2 = mysql_real_escape_string($_POST['pass2']);
-						$serial = mysql_real_escape_string($_POST['serial']);	
-						
-						if ($user == "" || $pass == "" || $serial == ""){
-							echo "Your missing some information.";	
-						}else{
-							$done = true;
-							if ($pass == $pass2){
-								$userData = $auth->getLicenceInfo(array("serial" => $serial));
-								
-								if ($userData == false){
-									echo "Invalid Serial.";
-									$bans->addStrike($_SERVER['REMOTE_ADDR']);
-								}elseif ($userData['user'] != "" || $userData['pass'] != ""){
-									echo "Serial has been activated already.";	
-								}else{
-									if ($userData['active'] == "0"){
-										echo "This serial is currently suspended.";	
-									}else{
-										if ($auth->getLicenceInfo(array("user" => $user)) != false){
-											echo "Username Taken.";
-										}else{
-											if (strlen($user) >= 3 && strlen($user) <= 25 && strlen($pass) >= 5 && strlen($pass) <= 30){
-												mysql_query("UPDATE licences SET user = '".$user."', pass = '".md5($_POST['pass'])."' WHERE serial = '".$userData['serial']."'") or die(mysql_error());
-												$done = true;
-												echo "Serial Activated, Please try logging in with your application.";
-											}else{
-												echo "Username/Password length's are incorrect.";	
-											}
-										}
-									}
-								}
+					<?php
+						// Check if the form has been submitted.
+						if (isset($_POST['hidden'])){
+							
+							// our form has been submitted.
+							$serial_u = $_POST['serial1']."-".$_POST['serial2']."-".$_POST['serial3']."-".$_POST['serial4']."-".$_POST['serial5'];
+							$serial = mysql_real_escape_string($serial_u);
+							
+							$check = mysql_query("SELECT * FROM licences WHERE serial = '".$serial."'");
+							
+							if (mysql_num_rows($check) == 0){
+								// serial is invalid. Add to bans.
+								$bans->addStrike($_SERVER['REMOTE_ADDR']);
+								$error = "Serial is invalid. ".$serial;
 							}else{
-								echo "Passwords doesn't match.";	
+								// the serial came back valid.
+								$serialData = mysql_fetch_assoc($check);
+								if ($serialData['user'] != ""){
+									// the serial is already used.
+									$error = "Serial has already been activated.";
+								}else{
+									// the serial is still active.
+									
+								}
 							}
 						}
-					}
-					if ($done == false){
-						?>
-						<form action="misc.php?a=registerSerial" method="POST">
-							Serial: <input type="text" name="serial" /><br />
-							Username: <input type="text" name="user" /><br />
-							Password: <input type="password" name="pass" /><br />
-                            Again: <input type="password" name="pass2" /><br />
-							<input type="submit" name="sub" value="Go" />
-						</form>
-					<?php } ?>
+					
+					
+					?>
+					<script type="text/javascript">
+						$(document).ready(function(){
+							$("input.serial").keypress(function() {
+							   if ($(this).val().length == 4){
+							   	$(this).next("input.serial").focus();
+							   }
+							});
+						});
+					</script>
+					<form action="misc.php?a=registerSerial" method="POST">
+						<input type="hidden" name="hidden" value="yes" />
+						<div id="serialContainer">
+							<div id="errors" style="font-size: 15px; color: red; font-weight: bold; margin: 5px;"><?php if($error != ""){ echo $error; }else{ echo "&nbsp"; } ?> </div>
+							<input type="text" name="serial1" class="serial" /> - 
+							<input type="text" name="serial2" class="serial" /> - 
+							<input type="text" name="serial3" class="serial" /> - 
+							<input type="text" name="serial4" class="serial" /> - 
+							<input type="text" name="serial5" class="serial" />
+							<br /><br />
+							<a onclick="document.forms[0].submit()" href="#" class="activate">Activate Serial</a>
+						</div>
+						<br />
+					</form>
 				</div>
 			</div>
 		</div>

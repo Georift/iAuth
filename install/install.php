@@ -1,4 +1,6 @@
-<html>
+<?php
+error_reporting(E_ERROR);
+?><html>
 	<head>
 		<title>iAuth Installation</title>
 		<link rel="stylesheet" type="text/css" href="../css/960.css">
