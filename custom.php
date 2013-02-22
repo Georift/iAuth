@@ -91,17 +91,11 @@ if ($_GET['a'] == "BulkGenerate"){
  * @input Duration in Seconds time=#
  * @input Password for API set in function pass=#
  */
-if ($_GET['a'] == "apiCreateKey"){
-	$application = $_GET['aid'];
-	$duration = $_GET['time'];
-	$password = "THISISAPASS";
-	
-	if ($password != $_GET['pass']){
-		die();
-	}
+ 
+ function apiCreateKey ($application, $duration){
 	
 	if ($application == "" || $duration == ""){
-		echo "Failed";
+		return "Failed";
 	}else{
 		// generate the serial and insert it into the database.
 		$serialTemp = genSerial();
@@ -113,8 +107,21 @@ if ($_GET['a'] == "apiCreateKey"){
 		}
 		
 		mysql_query("INSERT INTO licences(aid, serial, expires, active) VALUES('".(int)$application."','".$serialTemp."', '".$actualTime."', '1')") or die(mysql_error());
-		echo $serialTemp;
+		return $serialTemp;
 	}
+ }
+ 
+if ($_GET['a'] == "apiCreateKey"){
+	$application = $_GET['aid'];
+	$duration = $_GET['time'];
+	$pass = $_GET['pass'];
+	$password = "THISISAPASS";
+	
+	if ($password != $pass){
+		die();
+	}
+
+	echo apiCreateKey($application, $duration, $password);
 }
 
 
