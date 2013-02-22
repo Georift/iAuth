@@ -12,7 +12,7 @@ $lid = $_GET['aid'];
 
 $user = $_GET['user'];
 $pass = md5($_GET['pass']);
-$hwid = $_GET['hwid'];
+$hwid = md5($_GET['hwid']);
 $lid = $_GET['aid'];
 
 // Ban checking
