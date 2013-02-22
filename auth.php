@@ -127,5 +127,35 @@ switch($_GET['a']){
 				print_r($db->fetchAssoc($run));
 			}
 		break;
+		case "timeLeft":
+			$hash = $_GET['hash'];
+			// find the lid
+			$run = $db->select("app_sessions", "lid", array("hash" => $hash));
+			
+			if ($db->numRows($run) == 0){
+				echo "Invalid session.";
+			}else{
+				$array = $db->fetchRow($run);
+				$getData = $db->select("licences", "*", array("id" => $array[0]));
+				$data = $db->fetchAssoc($getData);
+				// Find the seconds left on the serial.
+				$timeLeft = $data['expires'];
+				
+				if ($timeLeft == "0"){
+					// the licence is lifetime.
+					echo "Lifetime Licence.";
+				}else{
+					// work out the time left.
+					$deltaTime = $timeLeft - time();
+					$daysLeft = $deltaTime / 86400;
+					$niceDaysLeft = floor($daysLeft);
+					if ($niceDaysLeft == "0"){
+						$niceDaysLeft = "<1";
+					}
+					echo $niceDaysLeft;
+				}
+			}
+			
+		break;
 }
 ?>
