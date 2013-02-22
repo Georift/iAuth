@@ -126,7 +126,7 @@ if ($_GET['a'] == "registerSerial"){
 								if (mysql_num_rows($check) == 0){
 									// serial is invalid. Add to bans.
 									$bans->addStrike($_SERVER['REMOTE_ADDR']);
-									$error = "Serial is invalid. ".$serial;
+									$error = "Serial is invalid.";
 								}else{
 									// the serial came back valid.
 									$serialData = mysql_fetch_assoc($check);

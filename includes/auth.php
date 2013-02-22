@@ -46,11 +46,13 @@ class auth {
 	
 	function validLogin($user, $pass, $hwid){
 		global $db;
-		if ($user == "" || $pass == "" || $hwid == ""){ return false; }
+		if ($user == "" || $pass == ""){ return false; }
 		
-		$query = "SELECT * FROM licences WHERE user = '".$user."' AND pass = '".$pass."' AND hwid = '".$hwid."'";
-		//$getData = mysql_query($query);
-		$getData = $db->select("licences", "*", array("user" => $user, "pass" => $pass, "hwid" => $hwid));
+		
+		$query = "SELECT * FROM licences WHERE user = '".mysql_real_escape_string($user)."' AND pass = '".$pass."' AND hwid = '".mysql_real_escape_string($hwid)."'";
+		
+		$getData = mysql_query($query);
+		//$getData = $db->select("licences", "*", array("user" => $user, "pass" => $pass, "hwid" => $hwid));
 		
 		if (mysql_num_rows($getData) >= 1){
 			$userData = mysql_fetch_assoc($getData);

@@ -12,7 +12,7 @@ $lid = $_GET['aid'];
 
 $user = $_GET['user'];
 $pass = md5($_GET['pass']);
-$hwid = md5($_GET['hwid']);
+$hwid = $_GET['hwid'];
 $lid = $_GET['aid'];
 
 // Ban checking
@@ -34,14 +34,16 @@ switch($_GET['a']){
 				echo "A session for your ip already exists.";	
 			}else{
 				$userData = $auth->validLogin($user, $pass, $hwid);
+				
 				if (is_array($userData) == false){
-					print_r($userData);
-					echo "FAILED";
+					//print_r($auth->validLogin("Geo", "Password", ""));
+					echo "FAILED.";
 					$bans->addStrike($_SERVER['REMOTE_ADDR']);	
 				}else{
+					
 					if ($userData['active'] == "1"){
 						if ($userData['hwid'] == $hwid){
-							if ($userData['expires'] <= time()){
+							if ($userData['expires'] <= time() AND $userData['expires'] != 0){
 								echo "ERROR: Your account has expired.";
 								$bans->addStrike($_SERVER['REMOTE_ADDR']);
 							}else{
