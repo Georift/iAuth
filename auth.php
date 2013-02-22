@@ -30,37 +30,40 @@ switch($_GET['a']){
 		if ($user == "" || $pass == ""){
 			echo "Failed";	
 		}else{
+			
 			if ($auth->sessionExists($_SERVER['REMOTE_ADDR']) == true){
-				echo "A session for your ip already exists.";	
+				// destroy the previous hash.
+				mysql_query("UPDATE app_sessions WHERE ip = '".mysql_real_escape_string($_SERVER['REMOTE_ADDR'])."' SET expires = '".(time() - 10)."'");
+			}
+		
+			$userData = $auth->validLogin($user, $pass, $hwid);
+			
+			if (is_array($userData) == false){
+				//print_r($auth->validLogin("Geo", "Password", ""));
+				echo "FAILED.";
+				$bans->addStrike($_SERVER['REMOTE_ADDR']);	
 			}else{
-				$userData = $auth->validLogin($user, $pass, $hwid);
 				
-				if (is_array($userData) == false){
-					//print_r($auth->validLogin("Geo", "Password", ""));
-					echo "FAILED.";
-					$bans->addStrike($_SERVER['REMOTE_ADDR']);	
-				}else{
-					
-					if ($userData['active'] == "1"){
-						if ($userData['hwid'] == $hwid){
-							if ($userData['expires'] <= time() AND $userData['expires'] != 0){
-								echo "ERROR: Your account has expired.";
-								$bans->addStrike($_SERVER['REMOTE_ADDR']);
-							}else{
-								$auth->logAccess($userData['id']);
-								$key = $auth->generateHash();
-								$auth->createSession($key, $userData['id']);
-								echo $key;
-							}
-						}else{
-							echo "ERROR: HWID Invalid. Only try logging in on the computer you activated the serial.";
+				if ($userData['active'] == "1"){
+					if ($userData['hwid'] == $hwid){
+						if ($userData['expires'] <= time() AND $userData['expires'] != 0){
+							echo "ERROR: Your account has expired.";
 							$bans->addStrike($_SERVER['REMOTE_ADDR']);
+						}else{
+							$auth->logAccess($userData['id']);
+							$key = $auth->generateHash();
+							$auth->createSession($key, $userData['id']);
+							echo $key;
 						}
 					}else{
-						echo "ERROR: Your account is suspended.";
+						echo "ERROR: HWID Invalid. Only try logging in on the computer you activated the serial.";
+						$bans->addStrike($_SERVER['REMOTE_ADDR']);
 					}
+				}else{
+					echo "ERROR: Your account is suspended.";
 				}
 			}
+		
 		}
 		break;
 	case "appNews":
