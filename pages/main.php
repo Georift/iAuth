@@ -717,6 +717,13 @@ echo $output;
 					$id = $_GET['id'];
 					$db->query("UPDATE bans SET exception = '1' WHERE id = '".mysql_real_escape_string($id)."'");	
 				}
+				if ($_GET['action'] == "customBan"){
+					$ip = $_POST['IP'];
+					if ( $ip != "" ){
+						$time = time() + 3600;
+						$db->query("INSERT INTO bans(ip, time, expires) VALUES('".mysql_real_escape_string($ip)."', '".time()."', '".$time."')");
+					}
+				}
 				if ($_GET['action'] == "flush_fail"){
 					$db->query("DELETE FROM fail_log");	
 				}
@@ -760,14 +767,25 @@ echo $output;
 				}
 			?>
 
-        <div class="widget">
-<div class="wTitle">Flush</div>
-<div class="wContent hiddenInfo">
-<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo $db->numRows($db->select("fail_log", "*")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo $db->numRows($db->select("bans", "*")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?>)</b></div>
-</div><br />
+        	<div class="widget">
+		<div class="wTitle">Flush</div>
+		<div class="wContent hiddenInfo">
+		<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo $db->numRows($db->select("fail_log", "*")); ?>)</b><br />
+	        	<a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo $db->numRows($db->select("bans", "*")); ?>)</b><br />
+	        	<a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
+	       		 <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?>)</b></div>
+		</div>
+		<br />
+		<div class="widget">
+		<div class="wTitle">Ban IP</div>
+		<div class="wContent hiddenInfo">
+			<form action ="index.php?a=admin&action=customBan" method="POST">
+				IP Address: <input type="text" name="IP" />
+				<input type="submit" name="sub" value="Ban" />	
+			</form>
+		</div>
+		</div>
+		<br />
 		<div class="widget">
 			<div class="wTitle">Change Password</div>
 			<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
