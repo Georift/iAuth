@@ -91,7 +91,11 @@ table td, table th {
 
 input,
 select{
-display : block;
+	display : block;
+}
+
+[type="checkbox"] {
+	display: inline;
 }
 
 label {
@@ -111,3 +115,6 @@ width : 150px;
 textarea {
     width:98%;
 }
+
+
+#settingsul li { display: inline; padding: 20px; }

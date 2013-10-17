@@ -33,7 +33,7 @@ class auth {
 	function loadUserData($lid){
 		if ($lid == ""){ return false; }
 		
-		$query = "SELECT * FROM licences WHERE id = '".$lid."'";
+		$query = "SELECT * FROM licences WHERE id = '".mysql_real_escape_string($lid)."'";
 		$getData = mysql_query($query);
 		
 		if (mysql_num_rows($getData) >= 1){
