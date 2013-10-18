@@ -91,7 +91,7 @@ switch($_GET['a']){
 						// we do not require login information.
 						if ($licenseInfo['active'] == "1"){
 							// it's active, check it's expiration.
-							if ($licenseInfo['expires'] <= time()){
+							if ($licenseInfo['expires'] <= time() AND $licenseInfo['expires'] != ""){
 								// license has expired.
 								echo "ERROR: License has expired.";
 							}else{
@@ -135,7 +135,7 @@ switch($_GET['a']){
 				// check if the application requires a login from the user.
 				$app = mysql_query("SELECT * FROM applications WHERE id = '".$userInfo['aid']."'");
 				if (mysql_num_rows($app) == 0){
-					echo "ERROR: An unexpected error occured.";
+					echo "ERROR: An unexpected error occurred";
 				}else{
 					// get the information.
 					$appInfo = mysql_fetch_assoc($app);
