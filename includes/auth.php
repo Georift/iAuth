@@ -143,7 +143,7 @@ class auth {
 		if ($ip == ""){ return false; }
 		$ip = mysql_real_escape_string($ip);
 
-		$query = "SELECT * FROM app_sessions WHERE ip = '".$ip."' AND expires >= '".time()."'";
+		$query = "SELECT * FROM app_sessions WHERE ip = '".$ip."' AND expires <> '-1'";
 		$getSession = mysql_query($query);
 		if (mysql_num_rows($getSession) >= 1){
 			return true;

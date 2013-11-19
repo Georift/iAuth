@@ -1,5 +1,7 @@
 CHANGE LOG
 ---------
+1.3.0b - 19/11/2013
+			- Fixed bug that caused old application sessions not to be destroyed after a new was made for that license.
 1.3.0a - 18/10/2013 - Fixed auth.php, now login isn't required by default.
 		    - Application Settings page now works.
                     - Sending statistics to developers

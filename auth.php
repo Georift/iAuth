@@ -45,10 +45,9 @@ switch($_GET['a']){
 					// missing application?
 					echo "ERROR: Missing application information.";
 				}else{
-						
 					if ($auth->sessionExists($_SERVER['REMOTE_ADDR']) == true){
 						// destroy the previous hash.
-						mysql_query("UPDATE app_sessions WHERE ip = '".mysql_real_escape_string($_SERVER['REMOTE_ADDR'])."' SET expires = '".(time() - 10)."'");
+						mysql_query("UPDATE app_sessions SET expires = '-1' WHERE ip = '".mysql_real_escape_string($_SERVER['REMOTE_ADDR'])."'") or die(mysql_error());
 					}
 						
 					// load the app info and check if we need to use login or not.
