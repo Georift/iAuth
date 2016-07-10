@@ -74,6 +74,93 @@ if ($db->numRows($get_today) != 0){
 	}
 }
 
+// load the type of chart that we need to generate.
+if ($settings->loadValue("jqplot") == "on"){
+	// they want the experimental jqplot graphing.
+	$today = 2;
+	$yesterday = 15;
+	$twob4 = 15;
+	$threeb4 = 12;
+	?>
+	<script type="text/javascript" src="js/jqplot/jquery.jqplot.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/jqplot.pieRenderer.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/jqplot.canvasTextRenderer.min.js"></script>
+	<script type="text/javascript" src="js/jqplot/jqplot.canvasAxisLabelRenderer.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/jquery.jqplot.css" />
+	<script type="text/javascript">
+	<?php
+		// generate the data sets for the applications.
+		$applicaton = $db->select("applications", "*");
+		while ($appData = $db->fetchAssoc($applicaton)){
+			// loop through the results
+			$get_today = $db->select("access_log", "*", array("aid" => $appData['id']));
+			$day_today = date("d", time());
+			$set_month = date("m", time());
+			
+			$today = 0;
+			$yesterday = 0;
+			$twob4 = 0;
+			$threeb4 = 0;
+			
+			if ($db->numRows($get_today) != 0){
+				while($row = $db->fetchAssoc($get_today)){
+					$log_day = date("d", $row['time']);
+					if ($set_month == date("m", $row['time'])){
+						if ($log_day == $day_today){
+							$today++;	
+						}elseif($log_day == ($day_today - 1)){
+							$yesterday++;	
+						}elseif($log_day == ($day_today - 2)){
+							$twob4++;
+						}elseif($log_day == ($day_today - 3)){
+							$threeb4++;
+						}else{
+							// Not within our time span ignore.	
+						}
+					}
+				}
+				// we now have the information. Assign it too our new array.
+				$appArray[$appData['name']][0] = $threeb4;
+				$appArray[$appData['name']][1] = $twob4;
+				$appArray[$appData['name']][2] = $yesterday;
+				$appArray[$appData['name']][3] = $today;
+			}
+		}
+		print_r($appArray);	
+	?>
+	$(document).ready(function(){ 
+    	var s1 = [['Active',<?php echo $get_active; ?>], ['Inactive',<?php echo $get_inactive; ?>]];
+		
+		var plot1 = $.jqplot ('chart_div', [[<?php echo $threeb4.",".$twob4.",".$yesterday.",".$today; ?>]], {
+			title: 'Daily Access'
+		});
+	
+	    var plot8 = $.jqplot('active_div', [s1], {
+			title: 'Current status of all licenses',
+	        grid: {
+	            drawBorder: false, 
+	            drawGridlines: false,
+	            background: '#ffffff',
+	            shadow:false
+	        },
+	        seriesDefaults:{
+	            renderer:$.jqplot.PieRenderer,
+	            rendererOptions: {
+	                showDataLabels: true
+	            }
+	        },
+	        legend: {
+	            show: true,
+	            location: 'e'
+	        }
+	    }); 
+	});
+	</script>
+	
+	<?php
+}else{
+	// classic google graphs.
+
 ?>
 <script type="text/javascript">
 // Number of Active Licences to inactive.
@@ -112,6 +199,9 @@ function drawChart2() {
 	chart.draw(data, {width: 420, height: 240, title: 'Hourly Access To The Application'});
 }
 </script>
+<?php 
+} 
+?>
 <script src="js/jtip.js" type="text/javascript"></script>
 <?php
 
@@ -137,7 +227,19 @@ echo $output;
 		<?php
 			// determine the latest version of iAuth from http://iauth.georift.net/VERSION
 			// Only show latest version if not upto date.
-			$version = file_get_contents("http://iauth.georift.net/VERSION");
+			
+			/**
+			 * While you don't have to give us this information we would love you to.
+			 * It's really motivating to see the numbers of who is using iAuth.
+			 */
+			if ($settings->loadValue("STATS") == true){
+				$host = base64_encode($_SERVER['HTTP_HOST']);
+				$licenses = mysql_num_rows(mysql_query("SELECT * FROM licences"));
+				$applications =  mysql_num_rows(mysql_query("SELECT * FROM applications"));
+				
+				$arg = "?h=".$host."&l=".$licenses."&a=".$applications;
+			}
+			$version = file_get_contents("http://iauth.georift.net/VERSION.php".$arg);
 			
 			if ($version != VERSION){
 				// out of date, alert the user.
@@ -233,6 +335,29 @@ echo $output;
 		
 		// Left Side Bar
 		echo "<div class=\"grid_12\">";
+			// list some options to do some actions with the licenses.
+			echo "<center><a href='index.php?a=licences&m=pruneExpired'>Prune Expired Licenses</a></center>";
+			echo "<br />"; // end of the small actions menu.
+			
+			// functions for the actions menu above.
+			switch($_GET['m']){
+				case "pruneExpired":
+					
+					if (!isset($_GET['y'])){
+						// ask if they actually want to do this.
+						$count = mysql_query("SELECT * FROM licences WHERE expires <= '".time()."' AND expires <> ''");
+						$total = mysql_num_rows($count);
+						
+						echo "<center><b>Are you sure you want to prune expired licences? {$total} licences will be deleted. <a href='index.php?a=licences&m=pruneExpired&y=1'>Yes</a></center>";
+						die();
+					}else{
+						// they actually want to do this and have been warned.
+						mysql_query("DELETE FROM licences WHERE expires <= '".time()."' AND expires <> ''");
+						echo "<i>All expired licences have been removed.</i>";
+					}
+				break;
+			}
+			
 			// Load any input first.
 			if (isset($_POST['sub']) == true){
 				// The button has been pressed now we can look through the check boxes
@@ -258,7 +383,7 @@ echo $output;
 					
 					$runArray['user'] = $_POST['user'];
 					$pass = md5($_POST['pass']);
-					$runArray['hwid'] = md5($_POST['HWID']);
+					$runArray['hwid'] = mysql_real_escape_string($_POST['HWID']);
 					if ($_POST['expires'] != ""){
 						$runArray['expires'] = strtotime(str_replace("/", "-", $_POST['expires']));
 						echo "Updated Licence Info";
@@ -279,8 +404,9 @@ echo $output;
 					$db->update("licences", $runArray, array("id" => $_GET['id']));
 				}
 				$id = $_GET['id'];
+
 				if (is_numeric($id) == false){
-					echo "<b>License ID's must be numeric.</b>";
+					echo "<b>ID is not valid.</b>";
 				}else{
 					// ID is valid.
 					$userData = $auth->loadUserData($id);
@@ -521,7 +647,7 @@ echo $output;
 			}
 		echo "</div>";
 	echo "</div>";
-}elseif($_GET['a'] == "applications"){
+}elseif($_GET['a']=="applications"){
 
 	if ($_GET['action'] == "newApp"){
 		$name = mysql_real_escape_string($_POST['name']);
@@ -545,6 +671,94 @@ echo $output;
 		echo "</div>";
 		
 		echo "<div class=\"grid_9\">";
+			
+			switch($_GET['m']){
+				case "editApp":
+					// get the app id and list all of the application details.
+					$aid = $_GET['aid'];
+					if (isset($_POST['aid'])){
+						$aid = $_POST['aid'];
+					}
+					if (!is_numeric($aid)){
+						die("ID's must be numeric.");
+					}
+					
+					$query = mysql_query("SELECT * FROM applications WHERE id = '".mysql_real_escape_string($aid)."'");
+					if (mysql_num_rows($query) == 0){
+						die("Unknown applications.");
+					}else{
+						// list the information.
+						$appInfo = mysql_fetch_assoc($query);
+						
+						// show a settings page.
+						// information that can be changed, name, version, active, login
+						
+						if (isset($_POST['sub'])){
+							// form has been submitted.
+							$newName = mysql_real_escape_string($_POST['name']);
+							$newVersion = mysql_real_escape_string($_POST['version']);
+							$newActive = mysql_real_escape_string($_POST['active']);
+							$newLogin = mysql_real_escape_string($_POST['login']);
+							
+							if ($newActive == "on"){ $newActive = "1"; }else{ $newActive = "0"; }
+							if ($newLogin == "on"){ $newLogin = "1"; }else{ $newLogin = "0"; }
+							
+							$query = "UPDATE applications SET";
+							$set = array();
+							if ($newName != $appInfo['name']){
+								$set['name'] = $newName;
+							}
+							if ($newVersion != $appInfo['version']){
+								$set['version'] = $newVersion;
+							}
+							if ($newActive != $appInfo['active']){
+								$set['active'] = $newActive;
+							}
+							if ($newLogin != $appInfo['login']){
+								$set['login'] = $newLogin;
+							}
+							
+							$i = 0;
+							$count = count($set);
+							foreach ($set as $key => $value){
+								if ($i != 0){
+									$query .= ",";
+								}
+								$query .= " ".$key." = '".$value."'";
+								$i++;
+							}
+							$query .= " WHERE id = '".$appInfo['id']."'";
+							mysql_query($query);
+							$appInfo = mysql_fetch_assoc(mysql_query("SELECT * FROM applications WHERE id = '".mysql_real_escape_string($aid)."'")) or die(mysql_error());
+							$message = "Application Updated!";
+						}
+						
+						
+						if ($appInfo['active'] == "1"){ $active = "checked=''"; }
+						if ($appInfo['login'] == "1"){ $login = "checked=''"; }				
+						
+						?>
+						<?php if (isset($message)){ echo "<center><b>".$message."</b></center><br />"; } ?>
+						<div class="widget">
+						 	<div class="wTitle">Application Settings</div>
+							<div class="wContent">
+								<form action="index.php?a=applications&m=editApp&aid=<?php echo $appInfo['id']; ?>" method="POST">
+									<input type="hidden" value="<?php echo $appInfo['id'] ?>" name='aid'/>
+									<label>Application Name:</label><input type="text" name="name" value="<?php echo $appInfo['name']; ?>"/>
+									<label>Version:</label><input type="text" name="version" value="<?php echo $appInfo['version']; ?>"/>
+									<label>Active?</label><input type="checkbox" name="active" <?php echo $active; ?>/><br />
+									<label>Requires login?</label><input type="checkbox" name="login" <?php echo $login; ?>/><i style='color: red'>Warning: Not recommended that you change.</i>
+									<input type="submit" name="sub" id="sub" value="Create" />
+								</form>
+							 </div>
+						 </div>
+             
+						<?php
+						
+					}
+					die();
+				break;
+			}
 			
 			if (isset($_POST['sub']) == true){
 				// The button has been pressed now we can look through the check boxes
@@ -655,7 +869,7 @@ echo $output;
 			?>
             <form action="index.php?a=applications" method="post">
             	<table style="width: 100%;" id="table">
-                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Users</td><td>Status</td><td>Default</td><td>Version</td><!--<td>News</td>--></tr></thead>
+                	<thead><tr><td></td><td>ID</td><td>Name</td><td>Licences</td><td>Status</td><td>Version</td><td>Edit</td></tr></thead>
              <?php
 			 $get_apps = $db->select("applications");
 			 
@@ -668,7 +882,7 @@ echo $output;
 					$default = "No";
 					if ($row['defaults'] == "1"){ $default = "Yes"; }
 					$id = $row['id'];
-					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid=".$row['id']."\">".$users."</a></td><td>{$status}</td><td>{$default} - <a href=\"index.php?a=applications&method=makeDefault&id={$id}\">Make Default</a></td><td>".$row['version']."</td><!--<td><a href=\"index.php?a=applications&method=editNews&id={$id}\">Edit News</a></td>--></tr>";
+					echo "<tr><td><input type=\"checkbox\" id=\"checkbox[{$id}]\" name=\"checkbox[{$id}]\" value=\"".$row['id']."\" /></td><td>".$row['id']."</td><td>".$row['name']."</td><td><a href=\"index.php?a=licences&aid".$row['id']."\">".$users."</a></td><td>{$status}</td><td>".$row['version']."</td><td><a href='index.php?a=applications&m=editApp&aid={$id}'><img src='images/edit.png' /></a></td></tr>";
 				}
 			 }
 			 
@@ -716,6 +930,13 @@ echo $output;
 					$id = $_GET['id'];
 					$db->query("UPDATE bans SET exception = '1' WHERE id = '".mysql_real_escape_string($id)."'");	
 				}
+				if ($_GET['action'] == "customBan"){
+					$ip = $_POST['IP'];
+					if ( $ip != "" ){
+						$time = time() + 3600;
+						$db->query("INSERT INTO bans(ip, time, expires) VALUES('".mysql_real_escape_string($ip)."', '".time()."', '".$time."')");
+					}
+				}
 				if ($_GET['action'] == "flush_fail"){
 					$db->query("DELETE FROM fail_log");	
 				}
@@ -759,14 +980,25 @@ echo $output;
 				}
 			?>
 
-        <div class="widget">
-<div class="wTitle">Flush</div>
-<div class="wContent hiddenInfo">
-<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo $db->numRows($db->select("fail_log", "*")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo $db->numRows($db->select("bans", "*")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
-        <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?>)</b></div>
-</div><br />
+        	<div class="widget">
+		<div class="wTitle">Flush</div>
+		<div class="wContent hiddenInfo">
+		<a href="index.php?a=admin&action=flush_fail">Flush Failed Access Attempts</a> <b>(<?php echo $db->numRows($db->select("fail_log", "*")); ?>)</b><br />
+	        	<a href="index.php?a=admin&action=flush_bans">Flush Bans</a> <b>(<?php echo $db->numRows($db->select("bans", "*")); ?>)</b><br />
+	        	<a href="index.php?a=admin&action=flush_inactive_bans">Flush Inactive Bans</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM bans WHERE expires <= '".time()."' OR  exception = '1'")); ?>)</b><br />
+	       		 <a href="index.php?a=admin&action=flush_fail">Flush Access Log</a> <b>(<?php echo $db->numRows($db->query("SELECT * FROM access_log")); ?>)</b></div>
+		</div>
+		<br />
+		<div class="widget">
+		<div class="wTitle">Ban IP</div>
+		<div class="wContent hiddenInfo">
+			<form action ="index.php?a=admin&action=customBan" method="POST">
+				IP Address: <input type="text" name="IP" />
+				<input type="submit" name="sub" value="Ban" />	
+			</form>
+		</div>
+		</div>
+		<br />
 		<div class="widget">
 			<div class="wTitle">Change Password</div>
 			<div class="wContent <?php if ($passChangeContent == ""){ ?>hiddenInfo<?php } ?>">
@@ -777,13 +1009,6 @@ echo $output;
 					<label>Comfirm Password</label><input type="password" name="npass1" />
 					<input type="submit" name="newPass" value="Change Password" />
 				</form>
-			</div>
-		</div>
-		<br />
-		<div class="widget">
-			<div class="wTitle">Settings</div>
-			<div class="wContent">
-				<center><a href="index.php?a=settings">Settings</a></center>
 			</div>
 		</div>
 		<br />
@@ -822,7 +1047,8 @@ echo $output;
 						if ($row['expires'] <= time()){
 							$expires = "Expired";	
 						}else{
-							$expires = date("d/m/Y h:i:s", $row['expires']);
+							$expires = timeToGo($row['expires'] - time());
+							//$expires = date("d/m/Y h:i:s", $row['expires']);
 						}
 						// Check if it's active.
 						if ($row['exception'] == "1" || $row['expires'] <= time()){
@@ -831,7 +1057,7 @@ echo $output;
 							$active = "<img src=\"images/accept.png\" />";	
 						}
 						// Print out our row.
-						echo "<tr><td><input type=\"checkbox\" \></td><td>".$row['ip']."</td><td>".$expires."</td><td>{$active}</td><td><a href=\"index.php?a=admin&action=delete&id=".$row['id']."\">Delete</a></td></tr>";
+						echo "<tr><td><input type=\"checkbox\" \></td><td>".$row['ip']."</td><td>".$expires."</td><td>{$active}</td><td><a href=\"index.php?a=admin&action=delete&id=".$row['id']."\">Unban</a></td></tr>";
 					}
 					if ($_GET['action'] != "showExpired"){
 						echo "<tr><td colspan=\"5\"><center><a href=\"index.php?a=admin&action=showExpired\">Show inactive Bans</a></center></td></tr>";
@@ -930,10 +1156,12 @@ echo $output;
 							if ($db->numRows($run) == 0){
 								echo "<center><p>No Settings Found.</p></center>";
 							 }else{
+							 	echo "<ul id='settingsul'>";
 								while($row = $db->fetchAssoc($run)){
 									$activeSettings = $db->numRows($db->query("SELECT * FROM settingsitems WHERE sid = '".$row['id']."'"));
-									echo "<a href=\"index.php?a=settings&action=detailed&id={$row['id']}\">".$row['name']." (<b>{$activeSettings}</b>)</a><br />";
+									echo "<li><a href=\"index.php?a=settings&action=detailed&id={$row['id']}\">".$row['name']." (<b>{$activeSettings}</b>)</a></li>";
 								}
+								echo "</ul>";
 							 }
 							 echo "</center>";
 						 }elseif($action == "detailed"){

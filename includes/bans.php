@@ -37,7 +37,7 @@ class Bans{
 		}else{
 				$query = "INSERT INTO fail_log(time,ip) VALUES('".time()."','".$ip."')";
 				mysql_query($query);
-				return false;
+				return false; // TODO work out if changing this confusing output would effect anything.
 		}
 	}
 	

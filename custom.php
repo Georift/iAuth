@@ -86,6 +86,46 @@ if ($_GET['a'] == "BulkGenerate"){
 
 
 /**
+ * Quick and Dirty API Access for generating serials.
+ * @input Application ID aid=#
+ * @input Duration in Seconds time=#
+ * @input Password for API set in function pass=#
+ */
+ 
+ function apiCreateKey ($application, $duration){
+	
+	if ($application == "" || $duration == ""){
+		return "Failed";
+	}else{
+		// generate the serial and insert it into the database.
+		$serialTemp = genSerial();
+		
+		if ($duration == "0"){
+			$actualTime = "0";
+		}else{
+			$actualTime = time() + (int)$duration;
+		}
+		
+		mysql_query("INSERT INTO licences(aid, serial, expires, active) VALUES('".(int)$application."','".$serialTemp."', '".$actualTime."', '1')") or die(mysql_error());
+		return $serialTemp;
+	}
+ }
+ 
+if ($_GET['a'] == "apiCreateKey"){
+	$application = $_GET['aid'];
+	$duration = $_GET['time'];
+	$pass = $_GET['pass'];
+	$password = "THISISAPASS";
+	
+	if ($password != $pass){
+		die();
+	}
+
+	echo apiCreateKey($application, $duration, $password);
+}
+
+
+/**
  * Generate a licence serial and return it. (Depreciated)
  */ 
 if ($_GET['a'] == "genSerialOld"){

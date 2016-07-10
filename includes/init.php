@@ -123,6 +123,20 @@ function timeAgo($d){
 	}
 }
 
+function timeToGo($d){
+	if ($d <= 59){
+		return $d." seconds.";
+	}elseif($d <= 3600){
+		return floor($d / 60)." minutes.";
+	}elseif($d <= 86399){
+		return floor(($d / 60) / 60)." hours.";
+	}elseif ($d <= 620082){
+		return floor((($d / 60) / 60) / 60)." days.";
+	}else{
+		return date("h:i:s d/m/Y");
+	}
+}
+
 
  
 ?>
